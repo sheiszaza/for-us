@@ -109,7 +109,7 @@ export function Countdowns() {
         </Button>
       }
     >
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
         {examples.map((example) => (
           <button
             key={example}
