@@ -11,6 +11,8 @@ export type Message = {
   createdAt: FirestoreDate;
   seenByMe: boolean;
   seenByHer: boolean;
+  imageUrl?: string;
+  imagePath?: string;
 };
 
 export type HomeNote = {

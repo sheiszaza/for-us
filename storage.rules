@@ -14,5 +14,13 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
       allow delete: if signedIn();
     }
+
+    match /messages/{fileName} {
+      // Message images are private to authenticated anonymous users of this Firebase project.
+      allow read: if signedIn();
+      allow write: if signedIn()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
   }
 }

@@ -18,7 +18,9 @@ service cloud.firestore {
         && request.resource.data.text is string
         && request.resource.data.createdAt is timestamp
         && request.resource.data.seenByMe is bool
-        && request.resource.data.seenByHer is bool;
+        && request.resource.data.seenByHer is bool
+        && (request.resource.data.imageUrl == null || request.resource.data.imageUrl is string)
+        && (request.resource.data.imagePath == null || request.resource.data.imagePath is string);
       allow update: if signedIn()
         && request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenByMe', 'seenByHer']);
       allow delete: if false;

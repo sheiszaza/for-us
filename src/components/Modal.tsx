@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useCallback, type MouseEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Button } from './Button';
@@ -11,6 +11,15 @@ type ModalProps = {
 };
 
 export function Modal({ open, title, children, onClose }: ModalProps) {
+  const handleBackdropClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (event.target === event.currentTarget) {
+        onClose();
+      }
+    },
+    [onClose],
+  );
+
   return (
     <AnimatePresence>
       {open ? (
@@ -19,12 +28,15 @@ export function Modal({ open, title, children, onClose }: ModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={handleBackdropClick}
         >
           <motion.section
             initial={{ y: 36, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 36, opacity: 0 }}
             className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-cream-50 p-5 shadow-2xl shadow-rose-950/20"
+            role="dialog"
+            aria-modal="true"
           >
             <div className="mb-5 flex items-center justify-between gap-4">
               <h2 className="text-xl font-black text-rose-950">{title}</h2>
