@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream-50: #fffaf3;
+  --color-cream-100: #fff4df;
+  --color-cream-200: #ffe8bf;
+  --color-rose-soft: #fff1f2;
+  --color-blush: #fda4af;
+  --color-wine: #9f1239;
+  --font-display: "Playfair Display", "Georgia", serif;
+}
+
+:root {
+  color: #4c0519;
+  background: #fff7ed;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+html {
+  min-height: 100%;
+  background: #fff7ed;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(251, 113, 133, 0.28), transparent 34rem),
+    radial-gradient(circle at 90% 18%, rgba(244, 114, 182, 0.18), transparent 22rem),
+    linear-gradient(180deg, #fff7ed 0%, #fff1f2 55%, #ffffff 100%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.safe-screen {
+  min-height: 100vh;
+  padding-top: max(1rem, var(--safe-top));
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+
+.glass-card {
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 20px 60px rgba(190, 18, 60, 0.12);
+  backdrop-filter: blur(22px);
+}
+
+.soft-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.38) transparent;
+}
+
+.soft-scrollbar::-webkit-scrollbar {
+  width: 0.35rem;
+}
+
+.soft-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(244, 63, 94, 0.38);
+}

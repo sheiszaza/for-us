@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function validRole(role) {
+      return role in ['me', 'her'];
+    }
+
+    match /messages/{messageId} {
+      // Only anonymous Firebase users can read/write the private couple chat.
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && validRole(request.resource.data.from)
+        && request.resource.data.text is string
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.seenByMe is bool
+        && request.resource.data.seenByHer is bool;
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenByMe', 'seenByHer']);
+      allow delete: if false;
+    }
+
+    match /memories/{memoryId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && validRole(request.resource.data.createdBy)
+        && request.resource.data.title is string
+        && request.resource.data.date is string;
+      allow update, delete: if signedIn();
+    }
+
+    match /letters/{letterId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && validRole(request.resource.data.createdBy)
+        && request.resource.data.title is string
+        && request.resource.data.content is string;
+      allow update, delete: if signedIn();
+    }
+
+    match /countdowns/{countdownId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && validRole(request.resource.data.createdBy)
+        && request.resource.data.title is string
+        && request.resource.data.targetDate is string;
+      allow update, delete: if signedIn();
+    }
+
+    match /dateIdeas/{ideaId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && validRole(request.resource.data.createdBy)
+        && request.resource.data.title is string
+        && request.resource.data.status in ['planned', 'upcoming', 'completed'];
+      allow update, delete: if signedIn();
+    }
+  }
+}
