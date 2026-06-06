@@ -198,12 +198,10 @@ export function Location() {
   const partnerLocation = partnerRole
     ? locations.find((location) => location.id === partnerRole)
     : undefined;
-  const activeLocations = useMemo(
+  const displayedLocations = useMemo(
     () =>
       locations.filter(
         (location) =>
-          location.sharing &&
-          isLocationFresh(location) &&
           typeof location.latitude === "number" &&
           typeof location.longitude === "number"
       ),
@@ -474,8 +472,11 @@ export function Location() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <FitMapToLocations locations={activeLocations} />
-            {activeLocations.map((location) => (
+            <FitMapToLocations locations={displayedLocations} />
+            {displayedLocations.map((location) => {
+              const isLive = location.sharing && isLocationFresh(location);
+
+              return (
               <Marker
                 key={location.id}
                 position={[location.latitude, location.longitude]}
@@ -484,32 +485,38 @@ export function Location() {
                 <Popup>
                   <strong>{getNickname(location.role)}</strong>
                   <br />
-                  Updated {formatLastUpdated(location.updatedAt)}
+                  {isLive ? "Live now" : "Last known location"}
+                  <br />
+                  Last updated {formatLastUpdated(location.updatedAt)}
                 </Popup>
               </Marker>
-            ))}
-            {activeLocations.map((location) =>
-              typeof location.accuracy === "number" && location.accuracy > 0 ? (
+              );
+            })}
+            {displayedLocations.map((location) => {
+              const isLive = location.sharing && isLocationFresh(location);
+
+              return typeof location.accuracy === "number" &&
+                location.accuracy > 0 ? (
                 <Circle
                   key={`${location.id}-accuracy`}
                   center={[location.latitude, location.longitude]}
                   radius={location.accuracy}
                   pathOptions={{
                     color: location.role === "me" ? "#f43f5e" : "#d946ef",
-                    fillOpacity: 0.08,
-                    opacity: 0.22,
+                    fillOpacity: isLive ? 0.08 : 0.04,
+                    opacity: isLive ? 0.22 : 0.12,
                   }}
                 />
-              ) : null
-            )}
+              ) : null;
+            })}
           </MapContainer>
 
-          {!loading && activeLocations.length === 0 ? (
+          {!loading && displayedLocations.length === 0 ? (
             <div className="pointer-events-none absolute inset-4 grid place-items-center rounded-[1.5rem] bg-white/80 p-5 text-center backdrop-blur">
               <EmptyState
                 icon={MapPin}
-                title="No live location yet"
-                description="Tap Start sharing and approve the browser prompt to put your marker on the map."
+                title="No saved location yet"
+                description="Tap Start sharing and approve the browser prompt to save the first location."
               />
             </div>
           ) : null}
