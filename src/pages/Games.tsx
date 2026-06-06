@@ -491,7 +491,7 @@ export function Games() {
     <Page
       eyebrow="Fun together"
       title="Games"
-      description="Play real-time games with your partner. Every move syncs instantly!"
+      description=""
       action={
         <div className="flex gap-2">
           {role === "me" ? (
