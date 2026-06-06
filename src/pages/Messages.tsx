@@ -279,50 +279,50 @@ export function Messages() {
                       isMine ? "justify-end" : "justify-start"
                     }`}
                   >
-                    <div
-                      className={`max-w-[82%] rounded-[1.5rem] shadow-sm ${
-                        isMine
-                          ? "rounded-br-md bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-rose-300/30"
-                          : "rounded-bl-md bg-white/85 text-rose-950"
-                      } ${message.imageUrl ? "overflow-hidden" : "px-4 py-3"}`}
-                    >
-                      {message.imageUrl ? (
-                        <button
-                          type="button"
-                          onClick={() => setFullscreenImage(message.imageUrl!)}
-                          className="block w-full"
-                        >
-                          <img
-                            src={message.imageUrl}
-                            alt="Shared image"
-                            className="max-h-64 w-full object-cover"
-                          />
-                        </button>
-                      ) : null}
-                      {message.text ? (
-                        <p
-                          className={`whitespace-pre-wrap text-sm leading-6 ${
-                            message.imageUrl ? "px-4 pt-3" : ""
-                          }`}
-                        >
-                          {message.text}
-                        </p>
-                      ) : null}
-                      <div
-                        className={`flex items-center gap-2 text-[0.68rem] ${
-                          isMine ? "text-white/75" : "text-rose-500/70"
-                        } ${
-                          message.imageUrl || message.text
-                            ? "px-4 pb-3 pt-1"
-                            : "mt-1"
-                        }`}
-                      >
-                        <span>{formatTime(message.createdAt)}</span>
-                        {isMine ? (
-                          <span>{seenByOther ? "Seen" : "Sent"}</span>
-                        ) : null}
-                      </div>
-                    </div>
+                            <div
+                              className={`max-w-[80%] rounded-[1.25rem] ${
+                                isMine
+                                  ? "rounded-br-sm bg-gradient-to-br from-rose-500 via-rose-500 to-pink-500 text-white shadow-lg shadow-rose-400/25"
+                                  : "rounded-bl-sm border border-rose-100/50 bg-white/90 text-rose-950 shadow-md shadow-rose-200/20 backdrop-blur-sm"
+                              } ${message.imageUrl ? "overflow-hidden" : "px-4 py-2.5"}`}
+                            >
+                              {message.imageUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setFullscreenImage(message.imageUrl!)}
+                                  className="block w-full"
+                                >
+                                  <img
+                                    src={message.imageUrl}
+                                    alt="Shared image"
+                                    className="max-h-64 w-full object-cover"
+                                  />
+                                </button>
+                              ) : null}
+                              {message.text ? (
+                                <p
+                                  className={`whitespace-pre-wrap text-[0.9rem] leading-relaxed ${
+                                    message.imageUrl ? "px-4 pt-2.5" : ""
+                                  }`}
+                                >
+                                  {message.text}
+                                </p>
+                              ) : null}
+                              <div
+                                className={`flex items-center gap-1.5 text-[0.65rem] font-medium tracking-wide ${
+                                  isMine ? "text-white/70" : "text-rose-400/80"
+                                } ${
+                                  message.imageUrl
+                                    ? "px-4 pb-2.5 pt-1"
+                                    : "mt-1"
+                                }`}
+                              >
+                                <span>{formatTime(message.createdAt)}</span>
+                                {isMine ? (
+                                  <span className="opacity-90">• {seenByOther ? "Seen" : "Sent"}</span>
+                                ) : null}
+                              </div>
+                            </div>
                   </div>
                 );
               })}
