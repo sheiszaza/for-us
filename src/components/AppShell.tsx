@@ -27,7 +27,7 @@ export function AppShell({ children }: AppShellProps) {
       </main>
       <InstallPrompt />
       <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-3xl px-3 pb-safe">
-        <div className="glass-card mx-auto flex gap-1 overflow-x-auto rounded-[2rem] p-2">
+        <div className="glass-card no-scrollbar mx-auto flex gap-1 overflow-x-auto rounded-[2rem] p-2">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}

@@ -1,20 +1,30 @@
-import heic2any from "heic2any";
+import imageCompression from "browser-image-compression";
+import decode from "heic-decode";
 
 interface OptimizeOptions {
-  maxWidth?: number;
-  maxHeight?: number;
+  maxSizeMB?: number;
+  maxWidthOrHeight?: number;
   quality?: number;
-  format?: "jpeg" | "webp";
 }
 
 const DEFAULT_OPTIONS: Required<OptimizeOptions> = {
-  maxWidth: 1920,
-  maxHeight: 1920,
-  quality: 0.8,
-  format: "jpeg",
+  maxSizeMB: 1,
+  maxWidthOrHeight: 1920,
+  quality: 0.85,
 };
 
-function isHeic(file: File): boolean {
+const HEIC_TIMEOUT_MS = 20000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), ms)
+    ),
+  ]);
+}
+
+function isHeicFile(file: File): boolean {
   const heicTypes = ["image/heic", "image/heif"];
   if (heicTypes.includes(file.type.toLowerCase())) {
     return true;
@@ -23,83 +33,32 @@ function isHeic(file: File): boolean {
   return extension === "heic" || extension === "heif";
 }
 
-async function convertHeicToBlob(file: File): Promise<Blob> {
-  const result = await heic2any({
-    blob: file,
-    toType: "image/jpeg",
-    quality: 0.92,
-  });
-  return Array.isArray(result) ? result[0] : result;
-}
+async function convertHeicToJpeg(file: File, quality: number): Promise<File> {
+  const arrayBuffer = await file.arrayBuffer();
+  const decoded = await decode({ buffer: new Uint8Array(arrayBuffer) });
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
-}
+  const canvas = document.createElement("canvas");
+  canvas.width = decoded.width;
+  canvas.height = decoded.height;
 
-function calculateDimensions(
-  width: number,
-  height: number,
-  maxWidth: number,
-  maxHeight: number
-): { width: number; height: number } {
-  if (width <= maxWidth && height <= maxHeight) {
-    return { width, height };
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Could not get canvas context");
   }
 
-  const ratio = Math.min(maxWidth / width, maxHeight / height);
-  return {
-    width: Math.round(width * ratio),
-    height: Math.round(height * ratio),
-  };
-}
+  const imageData = new ImageData(decoded.data, decoded.width, decoded.height);
+  ctx.putImageData(imageData, 0, 0);
 
-async function compressImage(
-  blob: Blob,
-  options: Required<OptimizeOptions>
-): Promise<Blob> {
-  const url = URL.createObjectURL(blob);
-
-  try {
-    const img = await loadImage(url);
-    const { width, height } = calculateDimensions(
-      img.width,
-      img.height,
-      options.maxWidth,
-      options.maxHeight
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (result) => (result ? resolve(result) : reject(new Error("toBlob failed"))),
+      "image/jpeg",
+      quality
     );
+  });
 
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("Could not get canvas context");
-    }
-
-    ctx.drawImage(img, 0, 0, width, height);
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (result) => {
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error("Canvas toBlob failed"));
-          }
-        },
-        `image/${options.format}`,
-        options.quality
-      );
-    });
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const baseName = file.name.replace(/\.[^/.]+$/, "");
+  return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
 }
 
 export async function optimizeImage(
@@ -107,19 +66,29 @@ export async function optimizeImage(
   options: OptimizeOptions = {}
 ): Promise<File> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  let blob: Blob = file;
 
-  if (isHeic(file)) {
-    blob = await convertHeicToBlob(file);
+  try {
+    let processedFile = file;
+
+    if (isHeicFile(file)) {
+      processedFile = await withTimeout(
+        convertHeicToJpeg(file, opts.quality),
+        HEIC_TIMEOUT_MS
+      );
+    }
+
+    const compressed = await imageCompression(processedFile, {
+      maxSizeMB: opts.maxSizeMB,
+      maxWidthOrHeight: opts.maxWidthOrHeight,
+      useWebWorker: true,
+    });
+
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    return new File([compressed], `${baseName}.jpg`, {
+      type: compressed.type || "image/jpeg",
+    });
+  } catch (error) {
+    console.error("Image optimization failed:", error);
+    return file;
   }
-
-  const compressedBlob = await compressImage(blob, opts);
-
-  const extension = opts.format === "webp" ? "webp" : "jpg";
-  const baseName = file.name.replace(/\.[^/.]+$/, "");
-  const newFileName = `${baseName}.${extension}`;
-
-  return new File([compressedBlob], newFileName, {
-    type: `image/${opts.format}`,
-  });
 }

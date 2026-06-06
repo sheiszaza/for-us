@@ -82,3 +82,12 @@ button {
   border-radius: 999px;
   background: rgba(244, 63, 94, 0.38);
 }
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

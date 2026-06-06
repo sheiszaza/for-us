@@ -9,9 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "browser-image-compression": "^2.0.2",
     "firebase": "^12.14.0",
     "framer-motion": "^12.40.0",
-    "heic2any": "^0.0.4",
+    "heic-decode": "^2.1.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

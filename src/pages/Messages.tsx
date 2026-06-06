@@ -33,6 +33,7 @@ export function Messages() {
   const [sending, setSending] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageProcessing, setImageProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -44,35 +45,58 @@ export function Messages() {
     usePaginatedMessages();
 
   const handleImageSelect = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
+    async (event: ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (file) {
-        setSelectedImage(file);
-        const reader = new FileReader();
-        reader.onloadend = () => setImagePreview(reader.result as string);
-        reader.readAsDataURL(file);
-      }
       if (event.target) {
         event.target.value = "";
+      }
+      if (!file) {
+        return;
+      }
+
+      setImageProcessing(true);
+      try {
+        const optimized = await optimizeImage(file);
+        setSelectedImage(optimized);
+        const previewUrl = URL.createObjectURL(optimized);
+
+        const canPreview = await new Promise<boolean>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          img.src = previewUrl;
+        });
+
+        setImagePreview(canPreview ? previewUrl : "pending");
+        if (!canPreview) {
+          URL.revokeObjectURL(previewUrl);
+        }
+      } catch {
+        toast.error("Could not process image.");
+      } finally {
+        setImageProcessing(false);
       }
     },
     []
   );
 
   const clearImage = useCallback(() => {
+    if (imagePreview && imagePreview !== "pending") {
+      URL.revokeObjectURL(imagePreview);
+    }
     setSelectedImage(null);
     setImagePreview(null);
+    setImageProcessing(false);
     setUploadProgress(null);
-  }, []);
+  }, [imagePreview]);
 
   const uploadImage = useCallback(async (image: File) => {
-    const optimized = await optimizeImage(image);
-    const imagePath = `messages/${Date.now()}-${optimized.name.replace(
+    const imagePath = `messages/${Date.now()}-${image.name.replace(
       /\s+/g,
       "-"
     )}`;
     const uploadRef = ref(storage, imagePath);
-    const task = uploadBytesResumable(uploadRef, optimized);
+    const task = uploadBytesResumable(uploadRef, image);
 
     return new Promise<{ imageUrl: string; imagePath: string }>(
       (resolve, reject) => {
@@ -307,13 +331,26 @@ export function Messages() {
           )}
         </div>
 
-        {imagePreview ? (
+        {imageProcessing ? (
+          <div className="flex items-center gap-2 border-t border-white/70 bg-white/55 px-3 py-3">
+            <div className="grid h-24 w-24 place-items-center rounded-2xl bg-rose-100">
+              <Loader2 className="size-6 animate-spin text-rose-400" />
+            </div>
+            <span className="text-sm text-rose-600">Processing image...</span>
+          </div>
+        ) : imagePreview ? (
           <div className="relative border-t border-white/70 bg-white/55 px-3 pt-3">
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="h-24 w-24 rounded-2xl object-cover"
-            />
+            {imagePreview === "pending" ? (
+              <div className="grid h-24 w-24 place-items-center rounded-2xl bg-rose-100">
+                <ImagePlus className="size-8 text-rose-400" />
+              </div>
+            ) : (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="h-24 w-24 rounded-2xl object-cover"
+              />
+            )}
             <button
               type="button"
               onClick={clearImage}
@@ -336,7 +373,7 @@ export function Messages() {
         <form
           onSubmit={handleSubmit}
           className={`flex gap-2 border-white/70 bg-white/55 p-3 ${
-            imagePreview ? "" : "border-t"
+            imagePreview || imageProcessing ? "" : "border-t"
           }`}
         >
           <input
@@ -349,7 +386,8 @@ export function Messages() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="shrink-0 text-rose-700"
+            disabled={imageProcessing}
+            className="shrink-0 text-rose-700 disabled:opacity-50"
             aria-label="Add image"
           >
             <ImagePlus size={28} />
@@ -362,7 +400,7 @@ export function Messages() {
           />
           <Button
             type="submit"
-            disabled={sending || (!text.trim() && !selectedImage)}
+            disabled={sending || imageProcessing || (!text.trim() && !selectedImage)}
             className="size-14 shrink-0 p-0"
             aria-label="Send message"
           >
