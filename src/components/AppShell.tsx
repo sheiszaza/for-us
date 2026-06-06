@@ -1,29 +1,39 @@
-import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
-import { CalendarHeart, Gamepad2, Heart, Home, Mail, MapPin, MessageCircle, Settings, Sparkles } from 'lucide-react';
-import { FloatingHearts } from './FloatingHearts';
-import { InstallPrompt } from './InstallPrompt';
+import type { ReactNode } from "react";
+import { NavLink } from "react-router-dom";
+import {
+  CalendarHeart,
+  Gamepad2,
+  Heart,
+  Home,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Settings,
+  Sparkles,
+} from "lucide-react";
+// import { FloatingHearts } from "./FloatingHearts";
+import { InstallPrompt } from "./InstallPrompt";
 
 type AppShellProps = {
   children: ReactNode;
 };
 
 const navItems = [
-  { to: '/', label: 'Home', icon: Home },
-  { to: '/messages', label: 'Chat', icon: MessageCircle },
-  { to: '/memories', label: 'Memories', icon: Heart },
-  { to: '/letters', label: 'Letters', icon: Mail },
-  { to: '/countdowns', label: 'Dates', icon: CalendarHeart },
-  { to: '/date-ideas', label: 'Ideas', icon: Sparkles },
-  { to: '/location', label: 'Map', icon: MapPin },
-  { to: '/games', label: 'Games', icon: Gamepad2 },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: "/", label: "Home", icon: Home },
+  { to: "/messages", label: "Chat", icon: MessageCircle },
+  { to: "/memories", label: "Memories", icon: Heart },
+  { to: "/letters", label: "Letters", icon: Mail },
+  { to: "/countdowns", label: "Dates", icon: CalendarHeart },
+  { to: "/date-ideas", label: "Ideas", icon: Sparkles },
+  { to: "/location", label: "Map", icon: MapPin },
+  { to: "/games", label: "Games", icon: Gamepad2 },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children }: AppShellProps) {
   return (
     <div>
-      <FloatingHearts />
+      {/* <FloatingHearts /> */}
       <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-[max(1rem,var(--safe-top))] sm:px-6">
         {children}
       </main>
@@ -34,10 +44,12 @@ export function AppShell({ children }: AppShellProps) {
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={to === "/"}
               className={({ isActive }) =>
                 `flex min-w-16 flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-3 py-2 text-[0.68rem] font-bold transition ${
-                  isActive ? 'bg-theme text-white shadow-lg shadow-theme' : 'text-theme'
+                  isActive
+                    ? "bg-theme text-white shadow-lg shadow-theme"
+                    : "text-theme"
                 }`
               }
             >
