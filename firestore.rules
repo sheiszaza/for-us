@@ -67,6 +67,15 @@ service cloud.firestore {
         && data.updatedBy == 'me';
     }
 
+    function validPinSettings(data) {
+      return data.keys().hasOnly(['me', 'her', 'updatedAt', 'updatedBy'])
+        && ('me' in data || 'her' in data)
+        && (!('me' in data) || (data.me is string && data.me.size() >= 4 && data.me.size() <= 32))
+        && (!('her' in data) || (data.her is string && data.her.size() >= 4 && data.her.size() <= 32))
+        && data.updatedAt is timestamp
+        && validRole(data.updatedBy);
+    }
+
     function validMessageCreate(data) {
       return data.keys().hasAll(['text', 'from', 'createdAt', 'seenByMe', 'seenByHer'])
         && data.keys().hasOnly(['text', 'from', 'createdAt', 'seenByMe', 'seenByHer', 'imageUrl', 'imagePath'])
@@ -147,6 +156,13 @@ service cloud.firestore {
       allow create, update: if signedIn()
         && (!('me' in request.resource.data) || (request.resource.data.me is string && request.resource.data.me.size() <= 50))
         && (!('her' in request.resource.data) || (request.resource.data.her is string && request.resource.data.her.size() <= 50));
+    }
+
+    match /settings/pins {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && validPinSettings(request.resource.data);
+      allow delete: if false;
     }
 
     match /locations/{locationRole} {

@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Check, Heart, LogOut, Palette, Shield, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNicknames } from '../context/NicknameContext';
+import { usePins } from '../context/PinContext';
 import { useRole } from '../context/RoleContext';
 import { themes, useTheme, type ThemeName } from '../context/ThemeContext';
-import { setStoredPin } from '../lib/roles';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Field } from '../components/Field';
@@ -21,9 +21,11 @@ export function Settings() {
   const { role, logout } = useRole();
   const { theme, setTheme } = useTheme();
   const { getNickname, setNickname } = useNicknames();
+  const { setPin } = usePins();
   const [newPin, setNewPin] = useState('');
   const [nickname, setNicknameValue] = useState('');
   const [savingNickname, setSavingNickname] = useState(false);
+  const [savingPin, setSavingPin] = useState(false);
 
   useEffect(() => {
     if (role) {
@@ -52,7 +54,7 @@ export function Settings() {
   );
 
   const handleChangePin = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
+    async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
 
       if (!role || newPin.trim().length < 4) {
@@ -60,11 +62,19 @@ export function Settings() {
         return;
       }
 
-      setStoredPin(role, newPin.trim());
-      setNewPin('');
-      toast.success('PIN updated on this device.');
+      setSavingPin(true);
+      try {
+        await setPin(role, newPin.trim());
+        setNewPin('');
+        toast.success('PIN updated everywhere.');
+      } catch (error) {
+        console.error('PIN save error:', error);
+        toast.error(error instanceof Error ? error.message : 'Could not save PIN.');
+      } finally {
+        setSavingPin(false);
+      }
     },
-    [newPin, role],
+    [newPin, role, setPin],
   );
 
   const handleLogout = useCallback(() => {
@@ -111,8 +121,17 @@ export function Settings() {
           <h2 className="text-xl font-black text-rose-950">Change PIN</h2>
         </div>
         <form onSubmit={handleChangePin} className="grid gap-4">
-          <Field label={`New PIN for ${role ? getNickname(role) : 'current role'}`} type="password" inputMode="numeric" value={newPin} onChange={(event) => setNewPin(event.target.value)} placeholder="At least 4 digits" />
-          <Button type="submit">Save PIN</Button>
+          <Field
+            label={`New PIN for ${role ? getNickname(role) : 'current role'}`}
+            type="password"
+            inputMode="numeric"
+            value={newPin}
+            onChange={(event) => setNewPin(event.target.value)}
+            placeholder="At least 4 digits"
+          />
+          <Button type="submit" disabled={savingPin}>
+            {savingPin ? 'Saving...' : 'Save PIN'}
+          </Button>
         </form>
       </Card>
 

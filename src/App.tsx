@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
 import { NicknameProvider } from './context/NicknameContext';
+import { PinProvider } from './context/PinContext';
 import { RoleProvider } from './context/RoleContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { RoleGate } from './components/RoleGate';
@@ -55,17 +56,19 @@ export default function App() {
   return (
     <AuthProvider>
       <NicknameProvider>
-        <RoleProvider>
-          <ThemeProvider>
-            <BrowserRouter>
-              <RoleGate>
-                <AppShell>
-                  <AnimatedRoutes />
-                </AppShell>
-              </RoleGate>
-            </BrowserRouter>
-          </ThemeProvider>
-        </RoleProvider>
+        <PinProvider>
+          <RoleProvider>
+            <ThemeProvider>
+              <BrowserRouter>
+                <RoleGate>
+                  <AppShell>
+                    <AnimatedRoutes />
+                  </AppShell>
+                </RoleGate>
+              </BrowserRouter>
+            </ThemeProvider>
+          </RoleProvider>
+        </PinProvider>
       </NicknameProvider>
     </AuthProvider>
   );

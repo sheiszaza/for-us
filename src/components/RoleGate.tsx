@@ -4,8 +4,9 @@ import { Heart, LockKeyhole, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useNicknames } from '../context/NicknameContext';
+import { usePins } from '../context/PinContext';
 import { useRole } from '../context/RoleContext';
-import { ROLE_ACCENTS, verifyPin } from '../lib/roles';
+import { ROLE_ACCENTS } from '../lib/roles';
 import type { Role } from '../types';
 import { Button } from './Button';
 import { Card } from './Card';
@@ -20,6 +21,7 @@ const roles: Role[] = ['me', 'her'];
 export function RoleGate({ children }: RoleGateProps) {
   const { user, loading, error } = useAuth();
   const { getNickname } = useNicknames();
+  const { loading: pinsLoading, error: pinsError, verifyPin } = usePins();
   const { role, selectRole } = useRole();
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [pin, setPin] = useState('');
@@ -41,6 +43,11 @@ export function RoleGate({ children }: RoleGateProps) {
         return;
       }
 
+      if (pinsLoading) {
+        setPinError('PINs are still syncing. Try again in a moment.');
+        return;
+      }
+
       if (!verifyPin(selectedRole, pin)) {
         setPinError('That PIN is not right yet.');
         return;
@@ -49,7 +56,7 @@ export function RoleGate({ children }: RoleGateProps) {
       selectRole(selectedRole);
       toast.success(`Welcome back, ${getNickname(selectedRole)}.`);
     },
-    [pin, selectRole, selectedRole],
+    [getNickname, pin, pinsLoading, selectRole, selectedRole, verifyPin],
   );
 
   if (loading) {
@@ -81,6 +88,19 @@ export function RoleGate({ children }: RoleGateProps) {
     return <>{children}</>;
   }
 
+  if (pinsLoading) {
+    return (
+      <div className="safe-screen grid place-items-center px-4">
+        <Card className="w-full max-w-sm text-center">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-full bg-rose-100 text-rose-500">
+            <Sparkles className="size-7 animate-pulse" />
+          </div>
+          <p className="font-semibold text-rose-900">Syncing your PINs...</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="safe-screen grid place-items-center px-4">
       <Card className="w-full max-w-md">
@@ -91,6 +111,11 @@ export function RoleGate({ children }: RoleGateProps) {
           <p className="text-sm font-bold uppercase tracking-[0.35em] text-rose-400">Private</p>
           <h1 className="mt-2 text-4xl font-black text-rose-950">For Us</h1>
           <p className="mt-3 text-sm leading-6 text-rose-700/75">A tiny romantic place made for only two people.</p>
+          {pinsError ? (
+            <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-700">
+              PIN sync is not available yet, so this device is using its saved fallback PIN.
+            </p>
+          ) : null}
         </div>
 
         <AnimatePresence mode="wait">

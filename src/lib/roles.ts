@@ -1,7 +1,6 @@
 import type { Role } from '../types';
 
 const ROLE_KEY = 'for-us:role';
-const PIN_PREFIX = 'for-us:pin:';
 
 export const DEFAULT_PINS: Record<Role, string> = {
   me: '1432',
@@ -39,11 +38,3 @@ export const clearCurrentRole = () => {
 export const isMe = () => getCurrentRole() === 'me';
 
 export const isHer = () => getCurrentRole() === 'her';
-
-export const getStoredPin = (role: Role) => storage()?.getItem(`${PIN_PREFIX}${role}`) ?? DEFAULT_PINS[role];
-
-export const setStoredPin = (role: Role, pin: string) => {
-  storage()?.setItem(`${PIN_PREFIX}${role}`, pin);
-};
-
-export const verifyPin = (role: Role, pin: string) => getStoredPin(role) === pin.trim();

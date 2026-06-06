@@ -8,7 +8,7 @@ type RealtimeDocState<T> = {
   error: string | null;
 };
 
-export function useRealtimeDoc<T>(collectionName: string, docId: string) {
+export function useRealtimeDoc<T>(collectionName: string, docId: string, enabled = true) {
   const [state, setState] = useState<RealtimeDocState<T>>({
     data: null,
     loading: true,
@@ -16,6 +16,11 @@ export function useRealtimeDoc<T>(collectionName: string, docId: string) {
   });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ data: null, loading: true, error: null });
+      return undefined;
+    }
+
     const ref = doc(db, collectionName, docId);
 
     const unsubscribe = onSnapshot(
@@ -30,7 +35,7 @@ export function useRealtimeDoc<T>(collectionName: string, docId: string) {
     );
 
     return unsubscribe;
-  }, [collectionName, docId]);
+  }, [collectionName, docId, enabled]);
 
   return state;
 }
