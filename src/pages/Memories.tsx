@@ -4,11 +4,11 @@ import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebas
 import { Grid2X2, Heart, ImagePlus, List, Pencil, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db, storage } from '../firebaseData';
+import { useNicknames } from '../context/NicknameContext';
 import { useRole } from '../context/RoleContext';
 import { useRealtimeCollection } from '../hooks/useRealtimeCollection';
 import { formatShortDate } from '../lib/date';
 import { optimizeImage } from '../lib/image';
-import { getRoleLabel } from '../lib/roles';
 import type { Memory } from '../types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -28,6 +28,7 @@ const initialForm = {
 
 export function Memories() {
   const { role } = useRole();
+  const { getNickname } = useNicknames();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Memory | null>(null);
   const [form, setForm] = useState(initialForm);
@@ -184,7 +185,7 @@ export function Memories() {
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-400">{formatShortDate(memory.date)}</p>
                   <h2 className="mt-2 text-xl font-black text-rose-950">{memory.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-rose-700/75">{memory.description}</p>
-                  <p className="mt-3 text-xs font-bold text-rose-500">Added by {getRoleLabel(memory.createdBy)}</p>
+                  <p className="mt-3 text-xs font-bold text-rose-500">Added by {getNickname(memory.createdBy)}</p>
                 </div>
                 <div className="flex gap-1">
                   <Button variant="ghost" className="size-9 p-0" onClick={() => openEdit(memory)} aria-label="Edit memory">

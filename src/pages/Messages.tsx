@@ -18,17 +18,18 @@ import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { Heart, ImagePlus, Loader2, SendHorizonal, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { db, storage } from "../firebaseData";
+import { useNicknames } from "../context/NicknameContext";
 import { useRole } from "../context/RoleContext";
 import { usePaginatedMessages } from "../hooks/usePaginatedMessages";
 import { formatTime } from "../lib/date";
 import { optimizeImage } from "../lib/image";
-import { getRoleLabel } from "../lib/roles";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
 import { Page } from "../components/Page";
 
 export function Messages() {
   const { role } = useRole();
+  const { getNickname } = useNicknames();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -229,7 +230,7 @@ export function Messages() {
           <p className="text-sm font-bold text-rose-950">Private room</p>
           <p className="text-xs text-rose-600/70">
             {role
-              ? `Writing as ${getRoleLabel(role)}`
+              ? `Writing as ${getNickname(role)}`
               : "Unlocked for two hearts"}
           </p>
         </div>

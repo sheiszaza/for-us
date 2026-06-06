@@ -3,11 +3,11 @@ import { addDoc, collection, deleteDoc, doc, orderBy, updateDoc } from 'firebase
 import { CalendarHeart, Pencil, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../firebaseData';
+import { useNicknames } from '../context/NicknameContext';
 import { useRole } from '../context/RoleContext';
 import { useNow } from '../hooks/useNow';
 import { useRealtimeCollection } from '../hooks/useRealtimeCollection';
 import { formatShortDate, getCountdownParts } from '../lib/date';
-import { getRoleLabel } from '../lib/roles';
 import type { Countdown } from '../types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -32,6 +32,7 @@ const initialForm = {
 
 export function Countdowns() {
   const { role } = useRole();
+  const { getNickname } = useNicknames();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Countdown | null>(null);
   const [form, setForm] = useState(initialForm);
@@ -140,7 +141,7 @@ export function Countdowns() {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-400">{formatShortDate(countdown.targetDate)}</p>
                   <h2 className="mt-2 text-2xl font-black text-rose-950">{countdown.title}</h2>
-                  <p className="mt-1 text-xs font-bold text-rose-500">Added by {getRoleLabel(countdown.createdBy)}</p>
+                  <p className="mt-1 text-xs font-bold text-rose-500">Added by {getNickname(countdown.createdBy)}</p>
                 </div>
                 <div className="flex gap-1">
                   <Button variant="ghost" className="size-9 p-0" onClick={() => openEdit(countdown)} aria-label="Edit countdown">

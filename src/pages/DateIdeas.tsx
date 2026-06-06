@@ -3,9 +3,9 @@ import { addDoc, collection, deleteDoc, doc, orderBy, updateDoc } from 'firebase
 import { Check, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../firebaseData';
+import { useNicknames } from '../context/NicknameContext';
 import { useRole } from '../context/RoleContext';
 import { useRealtimeCollection } from '../hooks/useRealtimeCollection';
-import { getRoleLabel } from '../lib/roles';
 import type { DateIdea, DateIdeaStatus } from '../types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -29,6 +29,7 @@ const statusLabels: Record<DateIdeaStatus, string> = {
 
 export function DateIdeas() {
   const { role } = useRole();
+  const { getNickname } = useNicknames();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<DateIdea | null>(null);
   const [form, setForm] = useState(initialForm);
@@ -130,7 +131,7 @@ export function DateIdeas() {
                 </span>
                 <h2 className="mt-4 text-2xl font-black text-rose-950">{idea.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-rose-700/75">{idea.description || 'A sweet plan waiting for details.'}</p>
-                <p className="mt-3 text-xs font-bold text-rose-500">Added by {getRoleLabel(idea.createdBy)}</p>
+                <p className="mt-3 text-xs font-bold text-rose-500">Added by {getNickname(idea.createdBy)}</p>
               </div>
               <div className="flex gap-1">
                 {idea.status !== 'completed' ? (

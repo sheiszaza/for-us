@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
+import { NicknameProvider } from './context/NicknameContext';
 import { RoleProvider } from './context/RoleContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { RoleGate } from './components/RoleGate';
@@ -47,17 +48,19 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <RoleProvider>
-        <ThemeProvider>
-          <BrowserRouter>
-            <RoleGate>
-              <AppShell>
-                <AnimatedRoutes />
-              </AppShell>
-            </RoleGate>
-          </BrowserRouter>
-        </ThemeProvider>
-      </RoleProvider>
+      <NicknameProvider>
+        <RoleProvider>
+          <ThemeProvider>
+            <BrowserRouter>
+              <RoleGate>
+                <AppShell>
+                  <AnimatedRoutes />
+                </AppShell>
+              </RoleGate>
+            </BrowserRouter>
+          </ThemeProvider>
+        </RoleProvider>
+      </NicknameProvider>
     </AuthProvider>
   );
 }

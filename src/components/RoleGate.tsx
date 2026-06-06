@@ -3,8 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Heart, LockKeyhole, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { useNicknames } from '../context/NicknameContext';
 import { useRole } from '../context/RoleContext';
-import { ROLE_ACCENTS, ROLE_LABELS, verifyPin } from '../lib/roles';
+import { ROLE_ACCENTS, verifyPin } from '../lib/roles';
 import type { Role } from '../types';
 import { Button } from './Button';
 import { Card } from './Card';
@@ -18,6 +19,7 @@ const roles: Role[] = ['me', 'her'];
 
 export function RoleGate({ children }: RoleGateProps) {
   const { user, loading, error } = useAuth();
+  const { getNickname } = useNicknames();
   const { role, selectRole } = useRole();
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [pin, setPin] = useState('');
@@ -45,7 +47,7 @@ export function RoleGate({ children }: RoleGateProps) {
       }
 
       selectRole(selectedRole);
-      toast.success(`Welcome back, ${ROLE_LABELS[selectedRole]}.`);
+      toast.success(`Welcome back, ${getNickname(selectedRole)}.`);
     },
     [pin, selectRole, selectedRole],
   );
@@ -101,10 +103,10 @@ export function RoleGate({ children }: RoleGateProps) {
               className="grid gap-3"
             >
               <Button className={`h-16 bg-gradient-to-r ${ROLE_ACCENTS.me}`} onClick={handleSelectMe}>
-                Continue as {ROLE_LABELS.me}
+                Continue as {getNickname('me')}
               </Button>
               <Button className={`h-16 bg-gradient-to-r ${ROLE_ACCENTS.her}`} onClick={handleSelectHer}>
-                Continue as {ROLE_LABELS.her}
+                Continue as {getNickname('her')}
               </Button>
             </motion.div>
           ) : (
@@ -117,7 +119,7 @@ export function RoleGate({ children }: RoleGateProps) {
               className="grid gap-4"
             >
               <Field
-                label={`PIN for ${ROLE_LABELS[selectedRole]}`}
+                label={`PIN for ${getNickname(selectedRole)}`}
                 type="password"
                 inputMode="numeric"
                 value={pin}

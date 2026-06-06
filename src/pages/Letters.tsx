@@ -12,10 +12,10 @@ import { motion } from "framer-motion";
 import { Mail, Pencil, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { db } from "../firebaseData";
+import { useNicknames } from "../context/NicknameContext";
 import { useRole } from "../context/RoleContext";
 import { useRealtimeCollection } from "../hooks/useRealtimeCollection";
 import { formatShortDate } from "../lib/date";
-import { getRoleLabel } from "../lib/roles";
 import type { Letter } from "../types";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -39,6 +39,7 @@ const initialForm = {
 
 export function Letters() {
   const { role } = useRole();
+  const { getNickname } = useNicknames();
   const [modalOpen, setModalOpen] = useState(false);
   const [reading, setReading] = useState<Letter | null>(null);
   const [editing, setEditing] = useState<Letter | null>(null);
@@ -177,7 +178,7 @@ export function Letters() {
                   {letter.title}
                 </h2>
                 <p className="mt-2 text-xs font-bold text-rose-500">
-                  Added by {getRoleLabel(letter.createdBy)} ·{" "}
+                  Added by {getNickname(letter.createdBy)} ·{" "}
                   {formatShortDate(letter.createdAt)}
                 </p>
               </div>
@@ -258,7 +259,7 @@ export function Letters() {
               {reading.content}
             </p>
             <p className="mt-6 text-xs font-bold text-rose-500">
-              With love, {getRoleLabel(reading.createdBy)}
+              With love, {getNickname(reading.createdBy)}
             </p>
           </motion.article>
         ) : null}

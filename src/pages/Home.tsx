@@ -23,11 +23,11 @@ import {
   Timer,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useNicknames } from "../context/NicknameContext";
 import { useRole } from "../context/RoleContext";
 import { db } from "../firebaseData";
 import { useRealtimeCollection } from "../hooks/useRealtimeCollection";
 import { formatShortDate, formatTime, getCountdownParts } from "../lib/date";
-import { getRoleLabel } from "../lib/roles";
 import type {
   Countdown,
   DateIdea,
@@ -46,6 +46,7 @@ const getPartnerRole = (role: Role): Role => (role === "me" ? "her" : "me");
 
 export function Home() {
   const { role } = useRole();
+  const { getNickname } = useNicknames();
   const [noteDraft, setNoteDraft] = useState("");
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
@@ -118,7 +119,7 @@ export function Home() {
           },
           { merge: true }
         );
-        toast.success(`Note for ${getRoleLabel(partnerRole)} saved.`);
+        toast.success(`Note for ${getNickname(partnerRole)} saved.`);
         setNoteModalOpen(false);
       } catch (noteError) {
         toast.error(
@@ -136,7 +137,7 @@ export function Home() {
   return (
     <Page
       eyebrow="Our little dashboard"
-      title={`Hi, ${role ? getRoleLabel(role) : "Love"}`}
+      title={`Hi, ${role ? getNickname(role) : "Love"}`}
       description="A soft little overview of what is new, what is next, and what already feels special."
     >
       <Card className="overflow-hidden bg-gradient-to-br from-rose-100 via-pink-100 to-fuchsia-100 text-rose-950">
@@ -146,9 +147,9 @@ export function Home() {
           <div className="relative z-10 flex items-center justify-between gap-4">
             <p className="text-sm font-bold uppercase tracking-[0.28em] text-rose-950/75">
               {role && receivedNote
-                ? `${getRoleLabel(
+                ? `${getNickname(
                     receivedNote.fromRole
-                  )} wrote for ${getRoleLabel(role)}`
+                  )} wrote for ${getNickname(role)}`
                 : "Today’s note"}
             </p>
             {role && partnerRole ? (
@@ -156,7 +157,7 @@ export function Home() {
                 type="button"
                 className="size-[3.75rem] shrink-0 p-0 shadow-xl shadow-rose-300/50"
                 onClick={() => setNoteModalOpen(true)}
-                aria-label={`Write a note for ${getRoleLabel(partnerRole)}`}
+                aria-label={`Write a note for ${getNickname(partnerRole)}`}
               >
                 <Plus className="size-12 stroke-[3]" />
               </Button>
@@ -167,7 +168,7 @@ export function Home() {
               ? "Loading your note..."
               : receivedNote?.text ||
                 (partnerRole
-                  ? `No note from ${getRoleLabel(partnerRole)} yet.`
+                  ? `No note from ${getNickname(partnerRole)} yet.`
                   : "Pick a role to see your note.")}
           </h2>
         </div>
@@ -176,7 +177,7 @@ export function Home() {
       {role && partnerRole ? (
         <Modal
           open={noteModalOpen}
-          title={`Write a note for ${getRoleLabel(partnerRole)}`}
+          title={`Write a note for ${getNickname(partnerRole)}`}
           onClose={() => setNoteModalOpen(false)}
         >
           <form onSubmit={handleSaveNote} className="grid gap-4">
@@ -185,7 +186,7 @@ export function Home() {
               rows={5}
               value={noteDraft}
               onChange={(event) => setNoteDraft(event.target.value)}
-              placeholder={`This will show on ${getRoleLabel(
+              placeholder={`This will show on ${getNickname(
                 partnerRole
               )}'s home screen.`}
               autoFocus
@@ -193,7 +194,7 @@ export function Home() {
             <Button type="submit" disabled={savingNote || !noteDraft.trim()}>
               {savingNote
                 ? "Saving..."
-                : `Save for ${getRoleLabel(partnerRole)}`}
+                : `Save for ${getNickname(partnerRole)}`}
             </Button>
           </form>
         </Modal>
@@ -282,7 +283,7 @@ export function Home() {
                   </p>
                 )}
                 <p className="mt-3 text-xs font-bold text-rose-500">
-                  {getRoleLabel(latestMessage.from)} ·{" "}
+                  {getNickname(latestMessage.from)} ·{" "}
                   {formatTime(latestMessage.createdAt)}
                 </p>
               </>

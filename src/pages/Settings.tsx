@@ -1,9 +1,10 @@
-import { useCallback, useState, type FormEvent } from 'react';
-import { Check, Heart, LogOut, Palette, Shield } from 'lucide-react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Check, Heart, LogOut, Palette, Shield, User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNicknames } from '../context/NicknameContext';
 import { useRole } from '../context/RoleContext';
 import { themes, useTheme, type ThemeName } from '../context/ThemeContext';
-import { getRoleLabel, setStoredPin } from '../lib/roles';
+import { setStoredPin } from '../lib/roles';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Field } from '../components/Field';
@@ -19,7 +20,36 @@ const themeColors: Record<ThemeName, string> = {
 export function Settings() {
   const { role, logout } = useRole();
   const { theme, setTheme } = useTheme();
+  const { getNickname, setNickname } = useNicknames();
   const [newPin, setNewPin] = useState('');
+  const [nickname, setNicknameValue] = useState('');
+  const [savingNickname, setSavingNickname] = useState(false);
+
+  useEffect(() => {
+    if (role) {
+      setNicknameValue(getNickname(role));
+    }
+  }, [role, getNickname]);
+
+  const handleSaveNickname = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (!role) return;
+
+      setSavingNickname(true);
+      try {
+        await setNickname(role, nickname);
+        toast.success('Nickname saved.');
+      } catch (error) {
+        console.error('Nickname save error:', error);
+        toast.error(error instanceof Error ? error.message : 'Could not save nickname.');
+      } finally {
+        setSavingNickname(false);
+      }
+    },
+    [nickname, role, setNickname],
+  );
 
   const handleChangePin = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -51,10 +81,28 @@ export function Settings() {
           </div>
           <div>
             <p className="text-sm font-bold text-rose-500">Current role</p>
-            <h2 className="text-2xl font-black text-rose-950">{role ? getRoleLabel(role) : 'Not selected'}</h2>
+            <h2 className="text-2xl font-black text-rose-950">{role ? getNickname(role) : 'Not selected'}</h2>
             <p className="mt-2 text-sm leading-6 text-rose-700/75">This is stored locally on this device for quick reopening from the iPhone Home Screen.</p>
           </div>
         </div>
+      </Card>
+
+      <Card>
+        <div className="mb-4 flex items-center gap-3">
+          <User className="size-5 text-rose-500" />
+          <h2 className="text-xl font-black text-rose-950">Your Nickname</h2>
+        </div>
+        <form onSubmit={handleSaveNickname} className="grid gap-4">
+          <Field
+            label="What should we call you?"
+            value={nickname}
+            onChange={(event) => setNicknameValue(event.target.value)}
+            placeholder="Enter your nickname"
+          />
+          <Button type="submit" disabled={savingNickname}>
+            {savingNickname ? 'Saving...' : 'Save Nickname'}
+          </Button>
+        </form>
       </Card>
 
       <Card>
@@ -63,7 +111,7 @@ export function Settings() {
           <h2 className="text-xl font-black text-rose-950">Change PIN</h2>
         </div>
         <form onSubmit={handleChangePin} className="grid gap-4">
-          <Field label={`New PIN for ${role ? getRoleLabel(role) : 'current role'}`} type="password" inputMode="numeric" value={newPin} onChange={(event) => setNewPin(event.target.value)} placeholder="At least 4 digits" />
+          <Field label={`New PIN for ${role ? getNickname(role) : 'current role'}`} type="password" inputMode="numeric" value={newPin} onChange={(event) => setNewPin(event.target.value)} placeholder="At least 4 digits" />
           <Button type="submit">Save PIN</Button>
         </form>
       </Card>

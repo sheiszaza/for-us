@@ -76,5 +76,12 @@ service cloud.firestore {
         && request.resource.data.status in ['planned', 'upcoming', 'completed'];
       allow update, delete: if signedIn();
     }
+
+    match /settings/nicknames {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && (!('me' in request.resource.data) || (request.resource.data.me is string && request.resource.data.me.size() <= 50))
+        && (!('her' in request.resource.data) || (request.resource.data.her is string && request.resource.data.her.size() <= 50));
+    }
   }
 }
