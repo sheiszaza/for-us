@@ -263,9 +263,24 @@ export function Home() {
               <DashboardLoading />
             ) : latestMessage ? (
               <>
-                <p className="rounded-[1.5rem] bg-white/75 px-4 py-3 text-sm leading-6 text-rose-950 shadow-sm">
-                  {latestMessage.text}
-                </p>
+                {latestMessage.imageUrl ? (
+                  <div className="overflow-hidden rounded-[1.5rem] bg-white/75 shadow-sm">
+                    <img
+                      src={latestMessage.imageUrl}
+                      alt="Shared image"
+                      className="h-32 w-full object-cover"
+                    />
+                    {latestMessage.text ? (
+                      <p className="px-4 py-3 text-sm leading-6 text-rose-950">
+                        {latestMessage.text}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="rounded-[1.5rem] bg-white/75 px-4 py-3 text-sm leading-6 text-rose-950 shadow-sm">
+                    {latestMessage.text}
+                  </p>
+                )}
                 <p className="mt-3 text-xs font-bold text-rose-500">
                   {getRoleLabel(latestMessage.from)} ·{" "}
                   {formatTime(latestMessage.createdAt)}
