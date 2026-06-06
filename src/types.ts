@@ -60,6 +60,16 @@ export type DateIdea = {
   status: DateIdeaStatus;
 };
 
+export type LiveLocation = {
+  id: string;
+  role: Role;
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+  sharing: boolean;
+  updatedAt?: FirestoreDate | null;
+};
+
 export type GameType =
   | 'tic-tac-toe'
   | 'love-quiz'

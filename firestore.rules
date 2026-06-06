@@ -16,6 +16,22 @@ service cloud.firestore {
         && items.size() <= maxSize;
     }
 
+    function validLiveLocation(data, locationRole) {
+      return validRole(locationRole)
+        && data.keys().hasOnly(['role', 'latitude', 'longitude', 'accuracy', 'sharing', 'updatedAt'])
+        && data.keys().hasAll(['role', 'latitude', 'longitude', 'sharing', 'updatedAt'])
+        && data.role == locationRole
+        && data.latitude is number
+        && data.latitude >= -90
+        && data.latitude <= 90
+        && data.longitude is number
+        && data.longitude >= -180
+        && data.longitude <= 180
+        && (!('accuracy' in data) || data.accuracy == null || data.accuracy is number)
+        && data.sharing is bool
+        && data.updatedAt is timestamp;
+    }
+
     function validGameContent(data) {
       return data.keys().hasOnly([
           'loveQuizQuestions',
@@ -123,6 +139,13 @@ service cloud.firestore {
       allow create, update: if signedIn()
         && (!('me' in request.resource.data) || (request.resource.data.me is string && request.resource.data.me.size() <= 50))
         && (!('her' in request.resource.data) || (request.resource.data.her is string && request.resource.data.her.size() <= 50));
+    }
+
+    match /locations/{locationRole} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && validLiveLocation(request.resource.data, locationRole);
+      allow delete: if false;
     }
 
     match /games/{gameId} {

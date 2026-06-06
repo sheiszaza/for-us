@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarHeart, Gamepad2, Heart, Home, Mail, MessageCircle, Settings, Sparkles } from 'lucide-react';
+import { CalendarHeart, Gamepad2, Heart, Home, Mail, MapPin, MessageCircle, Settings, Sparkles } from 'lucide-react';
 import { FloatingHearts } from './FloatingHearts';
 import { InstallPrompt } from './InstallPrompt';
 
@@ -15,6 +15,7 @@ const navItems = [
   { to: '/letters', label: 'Letters', icon: Mail },
   { to: '/countdowns', label: 'Dates', icon: CalendarHeart },
   { to: '/date-ideas', label: 'Ideas', icon: Sparkles },
+  { to: '/location', label: 'Map', icon: MapPin },
   { to: '/games', label: 'Games', icon: Gamepad2 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
