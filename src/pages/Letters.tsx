@@ -99,8 +99,8 @@ export function Letters() {
       title="Letters"
       description="Little envelopes for the moments when words should arrive with care."
       action={
-        <Button onClick={openNew} className="size-12 p-0" aria-label="Add letter">
-          <Plus className="size-5" />
+        <Button onClick={openNew} className="size-[3.75rem] p-0 shadow-xl shadow-rose-300/50" aria-label="Add letter">
+          <Plus className="size-12 stroke-[3]" />
         </Button>
       }
     >

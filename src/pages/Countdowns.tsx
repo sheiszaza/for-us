@@ -104,8 +104,8 @@ export function Countdowns() {
       title="Countdowns"
       description="Watch the sweetest future plans get closer every second."
       action={
-        <Button onClick={openNew} className="size-12 p-0" aria-label="Add countdown">
-          <Plus className="size-5" />
+        <Button onClick={openNew} className="size-[3.75rem] p-0 shadow-xl shadow-rose-300/50" aria-label="Add countdown">
+          <Plus className="size-12 stroke-[3]" />
         </Button>
       }
     >

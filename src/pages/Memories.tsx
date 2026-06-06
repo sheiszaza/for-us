@@ -144,8 +144,8 @@ export function Memories() {
       title="Memories"
       description="A soft timeline of the little and big things you never want to lose."
       action={
-        <Button onClick={openNew} className="size-12 p-0" aria-label="Add memory">
-          <Plus className="size-5" />
+        <Button onClick={openNew} className="size-[3.75rem] p-0 shadow-xl shadow-rose-300/50" aria-label="Add memory">
+          <Plus className="size-12 stroke-[3]" />
         </Button>
       }
     >

@@ -109,8 +109,8 @@ export function DateIdeas() {
       title="Date Ideas"
       description="Collect sweet plans before they become memories."
       action={
-        <Button onClick={openNew} className="size-12 p-0" aria-label="Add date idea">
-          <Plus className="size-5" />
+        <Button onClick={openNew} className="size-[3.75rem] p-0 shadow-xl shadow-rose-300/50" aria-label="Add date idea">
+          <Plus className="size-12 stroke-[3]" />
         </Button>
       }
     >

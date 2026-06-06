@@ -13,6 +13,14 @@ export type Message = {
   seenByHer: boolean;
 };
 
+export type HomeNote = {
+  id: string;
+  text: string;
+  fromRole: Role;
+  targetRole: Role;
+  updatedAt: FirestoreDate;
+};
+
 export type Memory = {
   id: string;
   title: string;
