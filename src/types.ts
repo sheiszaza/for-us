@@ -60,7 +60,20 @@ export type DateIdea = {
   status: DateIdeaStatus;
 };
 
-export type GameType = 'tic-tac-toe' | 'love-quiz' | 'would-you-rather' | 'memory-match' | 'word-guess' | 'truth-or-dare' | 'rock-paper-scissors' | 'typing-race';
+export type GameType =
+  | 'tic-tac-toe'
+  | 'love-quiz'
+  | 'would-you-rather'
+  | 'memory-match'
+  | 'word-guess'
+  | 'truth-or-dare'
+  | 'rock-paper-scissors'
+  | 'typing-race'
+  | 'connect-four'
+  | 'dots-and-boxes'
+  | 'simon-says'
+  | 'reaction-duel'
+  | 'code-breaker';
 
 export type GameStatus = 'waiting' | 'playing' | 'finished';
 
@@ -171,6 +184,62 @@ export type TypingRaceState = {
   showResult: boolean;
 };
 
+export type ConnectFourCell = Role | null;
+
+export type ConnectFourState = {
+  board: ConnectFourCell[];
+  currentTurn: Role;
+  winner: Role | 'draw' | null;
+  winningCells: number[];
+};
+
+export type DotsAndBoxesState = {
+  claimedEdges: Record<string, Role>;
+  boxes: Record<string, Role>;
+  currentTurn: Role;
+  scores: { me: number; her: number };
+  finished: boolean;
+};
+
+export type SimonSaysState = {
+  sequence: number[];
+  inputs: { me: number[]; her: number[] };
+  failed: { me: boolean; her: boolean };
+  finishTimes: { me: number | null; her: number | null };
+  scores: { me: number; her: number };
+  round: number;
+  maxRounds: number;
+  roundStartedAt: number;
+  roundWinner: Role | 'draw' | null;
+  showResult: boolean;
+};
+
+export type ReactionDuelState = {
+  readyAt: number;
+  taps: { me: number | null; her: number | null };
+  scores: { me: number; her: number };
+  round: number;
+  maxRounds: number;
+  roundWinner: Role | 'draw' | null;
+  falseStart: Role | null;
+  showResult: boolean;
+};
+
+export type CodeBreakerGuess = {
+  by: Role;
+  code: number[];
+  exact: number;
+  close: number;
+};
+
+export type CodeBreakerState = {
+  secret: number[];
+  guesses: CodeBreakerGuess[];
+  currentTurn: Role;
+  winner: Role | 'draw' | null;
+  maxGuesses: number;
+};
+
 export type GameState = {
   ticTacToe?: TicTacToeState;
   loveQuiz?: LoveQuizState;
@@ -180,6 +249,11 @@ export type GameState = {
   truthOrDare?: TruthOrDareState;
   rockPaperScissors?: RockPaperScissorsState;
   typingRace?: TypingRaceState;
+  connectFour?: ConnectFourState;
+  dotsAndBoxes?: DotsAndBoxesState;
+  simonSays?: SimonSaysState;
+  reactionDuel?: ReactionDuelState;
+  codeBreaker?: CodeBreakerState;
 };
 
 export type Game = {

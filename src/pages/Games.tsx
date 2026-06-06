@@ -54,6 +54,11 @@ import {
   TruthOrDareGame,
   RockPaperScissorsGame,
   TypingRaceGame,
+  ConnectFourGame,
+  DotsAndBoxesGame,
+  SimonSaysGame,
+  ReactionDuelGame,
+  CodeBreakerGame,
   shuffleArray,
 } from "../components/games";
 
@@ -109,6 +114,36 @@ const GAME_CONFIG: Record<
     description: "Race to type love phrases!",
     color: "from-violet-400 to-purple-500",
   },
+  "connect-four": {
+    name: "Connect Four",
+    icon: Grid3X3,
+    description: "Drop pieces and connect four in a row",
+    color: "from-blue-400 to-indigo-500",
+  },
+  "dots-and-boxes": {
+    name: "Dots & Boxes",
+    icon: Layers,
+    description: "Claim lines, complete boxes, steal turns",
+    color: "from-amber-400 to-rose-500",
+  },
+  "simon-says": {
+    name: "Simon Says",
+    icon: Sparkles,
+    description: "Memorize longer patterns under pressure",
+    color: "from-emerald-400 to-violet-500",
+  },
+  "reaction-duel": {
+    name: "Reaction Duel",
+    icon: Flame,
+    description: "Wait for green, then tap faster than your partner",
+    color: "from-cyan-400 to-emerald-500",
+  },
+  "code-breaker": {
+    name: "Code Breaker",
+    icon: Type,
+    description: "Crack the secret symbol code with smart clues",
+    color: "from-indigo-400 to-purple-500",
+  },
 };
 
 function generateGameId(): string {
@@ -117,6 +152,14 @@ function generateGameId(): string {
 
 function getRandomItem<T>(items: T[]): T | null {
   return items[Math.floor(Math.random() * items.length)] ?? null;
+}
+
+function getReactionReadyAt() {
+  return Date.now() + 1800 + Math.floor(Math.random() * 3200);
+}
+
+function getSecretCode() {
+  return Array.from({ length: 4 }, () => Math.floor(Math.random() * 6));
 }
 
 function createInitialGameState(type: GameType, gameContent: GameContent) {
@@ -212,6 +255,63 @@ function createInitialGameState(type: GameType, gameContent: GameContent) {
           showResult: false,
         },
       };
+    case "connect-four":
+      return {
+        connectFour: {
+          board: Array(42).fill(null),
+          currentTurn: "me" as Role,
+          winner: null,
+          winningCells: [],
+        },
+      };
+    case "dots-and-boxes":
+      return {
+        dotsAndBoxes: {
+          claimedEdges: {},
+          boxes: {},
+          currentTurn: "me" as Role,
+          scores: { me: 0, her: 0 },
+          finished: false,
+        },
+      };
+    case "simon-says":
+      return {
+        simonSays: {
+          sequence: [0, 1, 2].map(() => Math.floor(Math.random() * 4)),
+          inputs: { me: [], her: [] },
+          failed: { me: false, her: false },
+          finishTimes: { me: null, her: null },
+          scores: { me: 0, her: 0 },
+          round: 1,
+          maxRounds: 5,
+          roundStartedAt: Date.now(),
+          roundWinner: null,
+          showResult: false,
+        },
+      };
+    case "reaction-duel":
+      return {
+        reactionDuel: {
+          readyAt: getReactionReadyAt(),
+          taps: { me: null, her: null },
+          scores: { me: 0, her: 0 },
+          round: 1,
+          maxRounds: 5,
+          roundWinner: null,
+          falseStart: null,
+          showResult: false,
+        },
+      };
+    case "code-breaker":
+      return {
+        codeBreaker: {
+          secret: getSecretCode(),
+          guesses: [],
+          currentTurn: "me" as Role,
+          winner: null,
+          maxGuesses: 10,
+        },
+      };
     default:
       return {};
   }
@@ -273,7 +373,11 @@ export function Games() {
         const scores =
           currentGame.state.memoryMatch?.scores ||
           currentGame.state.loveQuiz?.scores ||
-          currentGame.state.rockPaperScissors?.scores;
+          currentGame.state.rockPaperScissors?.scores ||
+          currentGame.state.typingRace?.scores ||
+          currentGame.state.dotsAndBoxes?.scores ||
+          currentGame.state.simonSays?.scores ||
+          currentGame.state.reactionDuel?.scores;
 
         const historyEntry: Record<string, unknown> = {
           id: generateGameId(),
@@ -746,6 +850,16 @@ function ActiveGame({
         return <RockPaperScissorsGame {...props} />;
       case "typing-race":
         return <TypingRaceGame {...props} />;
+      case "connect-four":
+        return <ConnectFourGame {...props} />;
+      case "dots-and-boxes":
+        return <DotsAndBoxesGame {...props} />;
+      case "simon-says":
+        return <SimonSaysGame {...props} />;
+      case "reaction-duel":
+        return <ReactionDuelGame {...props} />;
+      case "code-breaker":
+        return <CodeBreakerGame {...props} />;
       default:
         return null;
     }
