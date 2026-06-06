@@ -9,7 +9,7 @@ type ButtonProps = HTMLMotionProps<'button'> & {
 };
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-300/40',
+  primary: 'bg-theme text-white shadow-lg shadow-theme',
   secondary: 'bg-white/80 text-rose-700 shadow-md shadow-rose-100 ring-1 ring-rose-100',
   ghost: 'bg-transparent text-rose-700',
   danger: 'bg-rose-950 text-white shadow-lg shadow-rose-900/20',

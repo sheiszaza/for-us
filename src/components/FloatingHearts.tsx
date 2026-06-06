@@ -16,7 +16,8 @@ export function FloatingHearts() {
             delay: index * 1.35,
             ease: 'easeInOut',
           }}
-          className="absolute text-xl text-rose-300/80"
+          className="absolute text-xl opacity-30"
+          style={{ color: `rgb(var(--theme-primary))` }}
           style={{
             left: `${(index * 23) % 100}%`,
             filter: 'blur(0.1px)',

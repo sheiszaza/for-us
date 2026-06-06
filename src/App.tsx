@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
 import { RoleProvider } from './context/RoleContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { RoleGate } from './components/RoleGate';
 import { AppShell } from './components/AppShell';
 
@@ -47,13 +48,15 @@ export default function App() {
   return (
     <AuthProvider>
       <RoleProvider>
-        <BrowserRouter>
-          <RoleGate>
-            <AppShell>
-              <AnimatedRoutes />
-            </AppShell>
-          </RoleGate>
-        </BrowserRouter>
+        <ThemeProvider>
+          <BrowserRouter>
+            <RoleGate>
+              <AppShell>
+                <AnimatedRoutes />
+              </AppShell>
+            </RoleGate>
+          </BrowserRouter>
+        </ThemeProvider>
       </RoleProvider>
     </AuthProvider>
   );

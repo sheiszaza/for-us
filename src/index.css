@@ -12,7 +12,6 @@
 
 :root {
   color: #4c0519;
-  background: #fff7ed;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -20,21 +19,24 @@
   -webkit-font-smoothing: antialiased;
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
+  --theme-primary: 244 63 94;
+  --theme-primary-light: 254 205 211;
+  --theme-accent: 190 18 60;
 }
 
-html {
+html,
+body {
   min-height: 100%;
-  background: #fff7ed;
+  margin: 0;
 }
 
 body {
-  min-height: 100vh;
-  margin: 0;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top left, rgba(251, 113, 133, 0.28), transparent 34rem),
-    radial-gradient(circle at 90% 18%, rgba(244, 114, 182, 0.18), transparent 22rem),
-    linear-gradient(180deg, #fff7ed 0%, #fff1f2 55%, #ffffff 100%);
+    radial-gradient(circle at top left, rgb(var(--theme-primary) / 0.28), transparent 34rem),
+    radial-gradient(circle at 90% 18%, rgb(var(--theme-primary) / 0.18), transparent 22rem),
+    linear-gradient(180deg, #fff7ed 0%, rgb(var(--theme-primary-light) / 0.3) 55%, #ffffff 100%);
+  background-attachment: fixed;
 }
 
 button,
@@ -46,10 +48,6 @@ select {
 
 button {
   -webkit-tap-highlight-color: transparent;
-}
-
-#root {
-  min-height: 100vh;
 }
 
 .safe-screen {
@@ -65,13 +63,13 @@ button {
 .glass-card {
   border: 1px solid rgba(255, 255, 255, 0.78);
   background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 20px 60px rgba(190, 18, 60, 0.12);
+  box-shadow: 0 20px 60px rgb(var(--theme-accent) / 0.12);
   backdrop-filter: blur(22px);
 }
 
 .soft-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(244, 63, 94, 0.38) transparent;
+  scrollbar-color: rgb(var(--theme-primary) / 0.38) transparent;
 }
 
 .soft-scrollbar::-webkit-scrollbar {
@@ -80,7 +78,7 @@ button {
 
 .soft-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(244, 63, 94, 0.38);
+  background: rgb(var(--theme-primary) / 0.38);
 }
 
 .no-scrollbar {
@@ -90,4 +88,29 @@ button {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Theme-aware utilities */
+.bg-theme {
+  background-color: rgb(var(--theme-primary));
+}
+
+.bg-theme-light {
+  background-color: rgb(var(--theme-primary-light));
+}
+
+.text-theme {
+  color: rgb(var(--theme-primary));
+}
+
+.text-theme-accent {
+  color: rgb(var(--theme-accent));
+}
+
+.border-theme {
+  border-color: rgb(var(--theme-primary));
+}
+
+.shadow-theme {
+  box-shadow: 0 10px 40px rgb(var(--theme-primary) / 0.3);
 }

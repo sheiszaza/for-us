@@ -20,9 +20,9 @@ const navItems = [
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen">
+    <div>
       <FloatingHearts />
-      <main className="mx-auto min-h-screen w-full max-w-3xl px-4 pb-28 pt-[max(1rem,var(--safe-top))] sm:px-6">
+      <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-[max(1rem,var(--safe-top))] sm:px-6">
         {children}
       </main>
       <InstallPrompt />
@@ -35,7 +35,7 @@ export function AppShell({ children }: AppShellProps) {
               end={to === '/'}
               className={({ isActive }) =>
                 `flex min-w-16 flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-3 py-2 text-[0.68rem] font-bold transition ${
-                  isActive ? 'bg-rose-500 text-white shadow-lg shadow-rose-300/40' : 'text-rose-500'
+                  isActive ? 'bg-theme text-white shadow-lg shadow-theme' : 'text-theme'
                 }`
               }
             >
