@@ -7,6 +7,7 @@ import { db, storage } from '../firebaseData';
 import { useRole } from '../context/RoleContext';
 import { useRealtimeCollection } from '../hooks/useRealtimeCollection';
 import { formatShortDate } from '../lib/date';
+import { optimizeImage } from '../lib/image';
 import { getRoleLabel } from '../lib/roles';
 import type { Memory } from '../types';
 import { Button } from '../components/Button';
@@ -59,9 +60,10 @@ export function Memories() {
   }, []);
 
   const uploadImage = useCallback(async (image: File) => {
-    const imagePath = `memories/${Date.now()}-${image.name.replace(/\s+/g, '-')}`;
+    const optimized = await optimizeImage(image);
+    const imagePath = `memories/${Date.now()}-${optimized.name.replace(/\s+/g, '-')}`;
     const uploadRef = ref(storage, imagePath);
-    const task = uploadBytesResumable(uploadRef, image);
+    const task = uploadBytesResumable(uploadRef, optimized);
 
     return new Promise<{ imageUrl: string; imagePath: string }>((resolve, reject) => {
       task.on(

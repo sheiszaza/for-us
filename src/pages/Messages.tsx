@@ -21,6 +21,7 @@ import { db, storage } from "../firebaseData";
 import { useRole } from "../context/RoleContext";
 import { usePaginatedMessages } from "../hooks/usePaginatedMessages";
 import { formatTime } from "../lib/date";
+import { optimizeImage } from "../lib/image";
 import { getRoleLabel } from "../lib/roles";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
@@ -65,12 +66,13 @@ export function Messages() {
   }, []);
 
   const uploadImage = useCallback(async (image: File) => {
-    const imagePath = `messages/${Date.now()}-${image.name.replace(
+    const optimized = await optimizeImage(image);
+    const imagePath = `messages/${Date.now()}-${optimized.name.replace(
       /\s+/g,
       "-"
     )}`;
     const uploadRef = ref(storage, imagePath);
-    const task = uploadBytesResumable(uploadRef, image);
+    const task = uploadBytesResumable(uploadRef, optimized);
 
     return new Promise<{ imageUrl: string; imagePath: string }>(
       (resolve, reject) => {
