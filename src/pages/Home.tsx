@@ -224,10 +224,10 @@ export function Home() {
                   <img
                     src={latestMemory.imageUrl}
                     alt={latestMemory.title}
-                    className="mb-4 h-36 w-full rounded-[1.5rem] object-cover"
+                    className="mb-4 aspect-[3/4] w-full rounded-[1.5rem] object-cover"
                   />
                 ) : (
-                  <div className="mb-4 grid h-36 place-items-center rounded-[1.5rem] bg-rose-100 text-rose-400">
+                  <div className="mb-4 grid aspect-[3/4] w-full place-items-center rounded-[1.5rem] bg-rose-100 text-rose-400">
                     <ImagePlus className="size-8" />
                   </div>
                 )}
@@ -397,9 +397,6 @@ export function Home() {
                 <h3 className="text-xl font-black text-violet-950">
                   Couple Games
                 </h3>
-                <p className="mt-1 text-sm text-violet-700/75">
-                  Tic-tac-toe, quizzes, truth or dare & more
-                </p>
               </div>
               <div className="text-3xl opacity-0 transition-opacity group-hover:opacity-100">
                 🎮

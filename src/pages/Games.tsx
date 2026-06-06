@@ -501,7 +501,6 @@ export function Games() {
               className="gap-2"
             >
               <SlidersHorizontal className="size-4" />
-              Manage
             </Button>
           ) : null}
           <Button

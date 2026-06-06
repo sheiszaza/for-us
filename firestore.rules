@@ -67,19 +67,27 @@ service cloud.firestore {
         && data.updatedBy == 'me';
     }
 
+    function validMessageCreate(data) {
+      return data.keys().hasAll(['text', 'from', 'createdAt', 'seenByMe', 'seenByHer'])
+        && data.keys().hasOnly(['text', 'from', 'createdAt', 'seenByMe', 'seenByHer', 'imageUrl', 'imagePath'])
+        && validRole(data.from)
+        && data.text is string
+        && data.createdAt is timestamp
+        && data.seenByMe is bool
+        && data.seenByHer is bool
+        && (!('imageUrl' in data) || data.imageUrl == null || data.imageUrl is string)
+        && (!('imagePath' in data) || data.imagePath == null || data.imagePath is string);
+    }
+
     match /messages/{messageId} {
       // Only anonymous Firebase users can read/write the private couple chat.
       allow read: if signedIn();
       allow create: if signedIn()
-        && validRole(request.resource.data.from)
-        && request.resource.data.text is string
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.seenByMe is bool
-        && request.resource.data.seenByHer is bool
-        && (request.resource.data.imageUrl == null || request.resource.data.imageUrl is string)
-        && (request.resource.data.imagePath == null || request.resource.data.imagePath is string);
+        && validMessageCreate(request.resource.data);
       allow update: if signedIn()
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenByMe', 'seenByHer']);
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenByMe', 'seenByHer'])
+        && request.resource.data.seenByMe is bool
+        && request.resource.data.seenByHer is bool;
       allow delete: if false;
     }
 
