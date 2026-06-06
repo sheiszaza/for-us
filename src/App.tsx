@@ -14,6 +14,7 @@ const Memories = lazy(() => import('./pages/Memories').then((module) => ({ defau
 const Letters = lazy(() => import('./pages/Letters').then((module) => ({ default: module.Letters })));
 const Countdowns = lazy(() => import('./pages/Countdowns').then((module) => ({ default: module.Countdowns })));
 const DateIdeas = lazy(() => import('./pages/DateIdeas').then((module) => ({ default: module.DateIdeas })));
+const Games = lazy(() => import('./pages/Games').then((module) => ({ default: module.Games })));
 const Settings = lazy(() => import('./pages/Settings').then((module) => ({ default: module.Settings })));
 
 function PageLoader() {
@@ -38,6 +39,7 @@ function AnimatedRoutes() {
           <Route path="/letters" element={<Letters />} />
           <Route path="/countdowns" element={<Countdowns />} />
           <Route path="/date-ideas" element={<DateIdeas />} />
+          <Route path="/games" element={<Games />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </AnimatePresence>

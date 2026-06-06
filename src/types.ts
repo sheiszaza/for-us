@@ -59,3 +59,127 @@ export type DateIdea = {
   createdBy: Role;
   status: DateIdeaStatus;
 };
+
+export type GameType = 'tic-tac-toe' | 'love-quiz' | 'would-you-rather' | 'memory-match' | 'word-guess' | 'truth-or-dare' | 'rock-paper-scissors' | 'typing-race';
+
+export type GameStatus = 'waiting' | 'playing' | 'finished';
+
+export type TicTacToeCell = 'me' | 'her' | null;
+
+export type TicTacToeState = {
+  board: TicTacToeCell[];
+  currentTurn: Role;
+  winner: Role | 'draw' | null;
+};
+
+export type LoveQuizQuestion = {
+  question: string;
+  answer: string;
+  askedBy: Role;
+  guessedAnswer?: string;
+  guessedBy?: Role;
+  correct?: boolean;
+};
+
+export type LoveQuizState = {
+  questions: LoveQuizQuestion[];
+  currentQuestionIndex: number;
+  scores: { me: number; her: number };
+  phase: 'asking' | 'answering' | 'reveal' | 'finished';
+};
+
+export type WouldYouRatherState = {
+  currentQuestion: { optionA: string; optionB: string } | null;
+  choices: { me?: 'A' | 'B'; her?: 'A' | 'B' };
+  questionHistory: Array<{
+    optionA: string;
+    optionB: string;
+    meChoice: 'A' | 'B';
+    herChoice: 'A' | 'B';
+  }>;
+  currentIndex: number;
+};
+
+export type MemoryCard = {
+  id: number;
+  emoji: string;
+  flipped: boolean;
+  matched: boolean;
+};
+
+export type MemoryMatchState = {
+  cards: MemoryCard[];
+  currentTurn: Role;
+  flippedCards: number[];
+  scores: { me: number; her: number };
+  finished: boolean;
+};
+
+export type WordGuessState = {
+  targetWord: string;
+  guesses: Array<{ word: string; by: Role }>;
+  currentGuess: string;
+  currentTurn: Role;
+  won: boolean;
+  lost: boolean;
+  setBy: Role;
+};
+
+export type TruthOrDareState = {
+  currentChallenge: { type: 'truth' | 'dare'; text: string } | null;
+  currentTurn: Role;
+  history: Array<{ type: 'truth' | 'dare'; text: string; completedBy: Role }>;
+};
+
+export type RockPaperScissorsChoice = 'rock' | 'paper' | 'scissors' | null;
+
+export type RockPaperScissorsState = {
+  choices: { me: RockPaperScissorsChoice; her: RockPaperScissorsChoice };
+  scores: { me: number; her: number };
+  round: number;
+  maxRounds: number;
+  roundWinner: Role | 'draw' | null;
+  showResult: boolean;
+};
+
+export type TypingRaceState = {
+  phrase: string;
+  progress: { me: string; her: string };
+  startTime: number | null;
+  finishTimes: { me: number | null; her: number | null };
+  round: number;
+  maxRounds: number;
+  scores: { me: number; her: number };
+  roundWinner: Role | null;
+  showResult: boolean;
+};
+
+export type GameState = {
+  ticTacToe?: TicTacToeState;
+  loveQuiz?: LoveQuizState;
+  wouldYouRather?: WouldYouRatherState;
+  memoryMatch?: MemoryMatchState;
+  wordGuess?: WordGuessState;
+  truthOrDare?: TruthOrDareState;
+  rockPaperScissors?: RockPaperScissorsState;
+  typingRace?: TypingRaceState;
+};
+
+export type Game = {
+  id: string;
+  type: GameType;
+  status: GameStatus;
+  createdBy: Role;
+  createdAt: FirestoreDate;
+  updatedAt: FirestoreDate;
+  state: GameState;
+  winner?: Role | 'draw';
+};
+
+export type GameHistory = {
+  id: string;
+  type: GameType;
+  winner: Role | 'draw' | null;
+  playedAt: FirestoreDate;
+  scores?: { me: number; her: number };
+};

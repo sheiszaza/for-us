@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import {
   CalendarHeart,
+  Gamepad2,
   Heart,
   ImagePlus,
   MessageCircle,
@@ -379,6 +380,34 @@ export function Home() {
           </Card>
         </Link>
       </motion.section>
+
+      <Link to="/games">
+        <Card className="group overflow-hidden bg-gradient-to-br from-violet-100 via-fuchsia-100 to-pink-100 transition hover:-translate-y-0.5">
+          <div className="relative">
+            <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-violet-300/30 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-8 -left-8 size-28 rounded-full bg-fuchsia-300/25 blur-2xl" />
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-300/50">
+                <Gamepad2 className="size-7" />
+              </div>
+              <div className="flex-1">
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-violet-500">
+                  Play together
+                </span>
+                <h3 className="text-xl font-black text-violet-950">
+                  Couple Games
+                </h3>
+                <p className="mt-1 text-sm text-violet-700/75">
+                  Tic-tac-toe, quizzes, truth or dare & more
+                </p>
+              </div>
+              <div className="text-3xl opacity-0 transition-opacity group-hover:opacity-100">
+                🎮
+              </div>
+            </div>
+          </div>
+        </Card>
+      </Link>
     </Page>
   );
 }
