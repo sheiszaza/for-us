@@ -10,6 +10,47 @@ service cloud.firestore {
       return role in ['me', 'her'];
     }
 
+    function validContentList(items, maxSize) {
+      return items is list
+        && items.size() > 0
+        && items.size() <= maxSize;
+    }
+
+    function validGameContent(data) {
+      return data.keys().hasOnly([
+          'loveQuizQuestions',
+          'wouldYouRatherQuestions',
+          'truths',
+          'dares',
+          'wordGuessWords',
+          'coupleEmojis',
+          'typingPhrases',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && data.keys().hasAll([
+          'loveQuizQuestions',
+          'wouldYouRatherQuestions',
+          'truths',
+          'dares',
+          'wordGuessWords',
+          'coupleEmojis',
+          'typingPhrases',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && validContentList(data.loveQuizQuestions, 100)
+        && validContentList(data.wouldYouRatherQuestions, 100)
+        && validContentList(data.truths, 100)
+        && validContentList(data.dares, 100)
+        && validContentList(data.wordGuessWords, 100)
+        && validContentList(data.coupleEmojis, 50)
+        && data.coupleEmojis.size() >= 8
+        && validContentList(data.typingPhrases, 100)
+        && data.updatedAt is timestamp
+        && data.updatedBy == 'me';
+    }
+
     match /messages/{messageId} {
       // Only anonymous Firebase users can read/write the private couple chat.
       allow read: if signedIn();
@@ -98,6 +139,13 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.type is string;
       allow update, delete: if signedIn();
+    }
+
+    match /gameContent/default {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && validGameContent(request.resource.data);
+      allow delete: if false;
     }
   }
 }

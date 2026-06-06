@@ -1,4 +1,4 @@
-import type { RockPaperScissorsChoice } from "../../types";
+import type { GameContent, RockPaperScissorsChoice } from "../../types";
 
 export const COUPLE_EMOJIS = [
   "💕",
@@ -148,6 +148,16 @@ export const TYPING_PHRASES = [
   "Soulmates forever",
   "You are my everything",
 ];
+
+export const DEFAULT_GAME_CONTENT: GameContent = {
+  loveQuizQuestions: LOVE_QUIZ_QUESTIONS,
+  wouldYouRatherQuestions: WOULD_YOU_RATHER_QUESTIONS,
+  truths: TRUTHS,
+  dares: DARES,
+  wordGuessWords: FIVE_LETTER_WORDS,
+  coupleEmojis: COUPLE_EMOJIS,
+  typingPhrases: TYPING_PHRASES,
+};
 
 export function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];

@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import type { Role } from "../../types";
 import { Button } from "../Button";
-import { WOULD_YOU_RATHER_QUESTIONS } from "./constants";
 import type { GameComponentProps } from "./types";
 
 export function WouldYouRatherGame({
   game,
+  gameContent,
   role,
   getNickname,
   updateGameState,
@@ -18,6 +18,7 @@ export function WouldYouRatherGame({
   const partnerRole: Role = role === "me" ? "her" : "me";
   const partnerChoice = state.choices[partnerRole];
   const bothChose = myChoice && partnerChoice;
+  const questions = gameContent.wouldYouRatherQuestions;
 
   const handleChoice = async (choice: "A" | "B") => {
     if (!role || myChoice) return;
@@ -31,14 +32,14 @@ export function WouldYouRatherGame({
   };
 
   const handleNext = async () => {
-    if (state.currentIndex >= WOULD_YOU_RATHER_QUESTIONS.length - 1) {
+    if (state.currentIndex >= questions.length - 1) {
       await endGame("draw");
       return;
     }
 
     await updateGameState({
       wouldYouRather: {
-        currentQuestion: WOULD_YOU_RATHER_QUESTIONS[state.currentIndex + 1],
+        currentQuestion: questions[state.currentIndex + 1],
         choices: {},
         questionHistory: [
           ...state.questionHistory,
@@ -57,7 +58,7 @@ export function WouldYouRatherGame({
   return (
     <div className="flex flex-col items-center gap-6">
       <p className="text-sm text-rose-400">
-        Question {state.currentIndex + 1} / {WOULD_YOU_RATHER_QUESTIONS.length}
+        Question {state.currentIndex + 1} / {questions.length}
       </p>
 
       <p className="text-center text-lg font-bold text-rose-950">
@@ -164,7 +165,7 @@ export function WouldYouRatherGame({
             )}
           </p>
           <Button onClick={handleNext} className="w-full">
-            {state.currentIndex >= WOULD_YOU_RATHER_QUESTIONS.length - 1
+            {state.currentIndex >= questions.length - 1
               ? "Finish Game"
               : "Next Question"}
           </Button>

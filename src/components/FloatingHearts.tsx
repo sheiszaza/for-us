@@ -17,8 +17,8 @@ export function FloatingHearts() {
             ease: 'easeInOut',
           }}
           className="absolute text-xl opacity-30"
-          style={{ color: `rgb(var(--theme-primary))` }}
           style={{
+            color: `rgb(var(--theme-primary))`,
             left: `${(index * 23) % 100}%`,
             filter: 'blur(0.1px)',
           }}

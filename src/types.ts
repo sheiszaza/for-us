@@ -64,6 +64,23 @@ export type GameType = 'tic-tac-toe' | 'love-quiz' | 'would-you-rather' | 'memor
 
 export type GameStatus = 'waiting' | 'playing' | 'finished';
 
+export type WouldYouRatherQuestion = {
+  optionA: string;
+  optionB: string;
+};
+
+export type GameContent = {
+  loveQuizQuestions: string[];
+  wouldYouRatherQuestions: WouldYouRatherQuestion[];
+  truths: string[];
+  dares: string[];
+  wordGuessWords: string[];
+  coupleEmojis: string[];
+  typingPhrases: string[];
+  updatedAt?: FirestoreDate;
+  updatedBy?: Role;
+};
+
 export type TicTacToeCell = 'me' | 'her' | null;
 
 export type TicTacToeState = {
@@ -89,7 +106,7 @@ export type LoveQuizState = {
 };
 
 export type WouldYouRatherState = {
-  currentQuestion: { optionA: string; optionB: string } | null;
+  currentQuestion: WouldYouRatherQuestion | null;
   choices: { me?: 'A' | 'B'; her?: 'A' | 'B' };
   questionHistory: Array<{
     optionA: string;

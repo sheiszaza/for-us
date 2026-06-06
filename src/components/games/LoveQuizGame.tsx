@@ -2,11 +2,11 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import type { Role } from "../../types";
 import { Button } from "../Button";
-import { LOVE_QUIZ_QUESTIONS } from "./constants";
 import type { GameComponentProps } from "./types";
 
 export function LoveQuizGame({
   game,
+  gameContent,
   role,
   getNickname,
   updateGameState,
@@ -21,6 +21,7 @@ export function LoveQuizGame({
   const currentQuestion = state.questions[state.currentQuestionIndex];
   const partnerRole: Role = role === "me" ? "her" : "me";
   const isAsker = currentQuestion?.askedBy === role;
+  const questions = gameContent.loveQuizQuestions;
 
   const handleAskQuestion = async (question: string) => {
     if (!role || !input.trim()) {
@@ -126,7 +127,7 @@ export function LoveQuizGame({
                 Pick a question and answer it secretly:
               </p>
               <div className="grid gap-2">
-                {LOVE_QUIZ_QUESTIONS.slice(0, 5).map((q) => (
+                {questions.map((q) => (
                   <button
                     key={q}
                     onClick={() => setSelectedQuestion(q)}

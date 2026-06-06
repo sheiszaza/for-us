@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   doc,
@@ -22,6 +23,7 @@ import {
   History,
   Hand,
   Keyboard,
+  SlidersHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNicknames } from "../context/NicknameContext";
@@ -29,8 +31,16 @@ import { useRole } from "../context/RoleContext";
 import { db } from "../firebaseData";
 import { useRealtimeDoc } from "../hooks/useRealtimeDoc";
 import { useRealtimeCollection } from "../hooks/useRealtimeCollection";
+import { useGameContent } from "../hooks/useGameContent";
 import { formatShortDate } from "../lib/date";
-import type { Game, GameHistory, GameType, Role, TicTacToeCell } from "../types";
+import type {
+  Game,
+  GameContent,
+  GameHistory,
+  GameType,
+  Role,
+  TicTacToeCell,
+} from "../types";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Page } from "../components/Page";
@@ -44,9 +54,6 @@ import {
   TruthOrDareGame,
   RockPaperScissorsGame,
   TypingRaceGame,
-  COUPLE_EMOJIS,
-  WOULD_YOU_RATHER_QUESTIONS,
-  TYPING_PHRASES,
   shuffleArray,
 } from "../components/games";
 
@@ -108,7 +115,11 @@ function generateGameId(): string {
   return `game_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
-function createInitialGameState(type: GameType) {
+function getRandomItem<T>(items: T[]): T | null {
+  return items[Math.floor(Math.random() * items.length)] ?? null;
+}
+
+function createInitialGameState(type: GameType, gameContent: GameContent) {
   switch (type) {
     case "tic-tac-toe":
       return {
@@ -130,17 +141,14 @@ function createInitialGameState(type: GameType) {
     case "would-you-rather":
       return {
         wouldYouRather: {
-          currentQuestion:
-            WOULD_YOU_RATHER_QUESTIONS[
-              Math.floor(Math.random() * WOULD_YOU_RATHER_QUESTIONS.length)
-            ],
+          currentQuestion: getRandomItem(gameContent.wouldYouRatherQuestions),
           choices: {},
           questionHistory: [],
           currentIndex: 0,
         },
       };
     case "memory-match": {
-      const emojis = shuffleArray(COUPLE_EMOJIS).slice(0, 8);
+      const emojis = shuffleArray(gameContent.coupleEmojis).slice(0, 8);
       const cards = shuffleArray(
         [...emojis, ...emojis].map((emoji, index) => ({
           id: index,
@@ -193,7 +201,7 @@ function createInitialGameState(type: GameType) {
     case "typing-race":
       return {
         typingRace: {
-          phrase: shuffleArray(TYPING_PHRASES)[0],
+          phrase: shuffleArray(gameContent.typingPhrases)[0],
           progress: { me: "", her: "" },
           startTime: null,
           finishTimes: { me: null, her: null },
@@ -212,6 +220,8 @@ function createInitialGameState(type: GameType) {
 export function Games() {
   const { role } = useRole();
   const { getNickname } = useNicknames();
+  const navigate = useNavigate();
+  const { gameContent, error: gameContentError } = useGameContent();
   const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -242,7 +252,7 @@ export function Games() {
           createdBy: role,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          state: createInitialGameState(type),
+          state: createInitialGameState(type, gameContent),
         };
 
         await setDoc(doc(db, "games", "current"), gameData);
@@ -252,7 +262,7 @@ export function Games() {
         toast.error("Couldn't start game");
       }
     },
-    [role]
+    [gameContent, role]
   );
 
   const endGame = useCallback(
@@ -368,6 +378,7 @@ export function Games() {
         getNickname={getNickname}
         updateGameState={updateGameState}
         endGame={endGame}
+        gameContent={gameContent}
       />
     );
   }
@@ -378,16 +389,35 @@ export function Games() {
       title="Games"
       description="Play real-time games with your partner. Every move syncs instantly!"
       action={
-        <Button
-          variant="secondary"
-          onClick={() => setShowHistory(true)}
-          className="gap-2"
-        >
-          <History className="size-4" />
-          History
-        </Button>
+        <div className="flex gap-2">
+          {role === "me" ? (
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/games-admin")}
+              className="gap-2"
+            >
+              <SlidersHorizontal className="size-4" />
+              Manage
+            </Button>
+          ) : null}
+          <Button
+            variant="secondary"
+            onClick={() => setShowHistory(true)}
+            className="gap-2"
+          >
+            <History className="size-4" />
+            History
+          </Button>
+        </div>
       }
     >
+      {gameContentError ? (
+        <p className="rounded-3xl bg-white/70 p-4 text-sm font-semibold text-rose-700">
+          Game content could not sync, so the built-in fallback content is being
+          used.
+        </p>
+      ) : null}
+
       {stats.totalGames > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -670,6 +700,7 @@ export function Games() {
 
 type ActiveGameProps = {
   game: Game;
+  gameContent: GameContent;
   role: Role | null;
   getNickname: (role: Role) => string;
   updateGameState: (state: Partial<Game["state"]>) => Promise<void>;
@@ -678,6 +709,7 @@ type ActiveGameProps = {
 
 function ActiveGame({
   game,
+  gameContent,
   role,
   getNickname,
   updateGameState,
@@ -688,7 +720,14 @@ function ActiveGame({
   const Icon = config.icon;
 
   const renderGame = () => {
-    const props = { game, role, getNickname, updateGameState, endGame };
+    const props = {
+      game,
+      gameContent,
+      role,
+      getNickname,
+      updateGameState,
+      endGame,
+    };
 
     switch (game.type) {
       case "tic-tac-toe":

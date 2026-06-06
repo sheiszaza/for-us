@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import type { Role } from "../../types";
 import { Button } from "../Button";
-import { TYPING_PHRASES, shuffleArray } from "./constants";
+import { shuffleArray } from "./constants";
 import type { GameComponentProps } from "./types";
 
 export function TypingRaceGame({
   game,
+  gameContent,
   role,
   getNickname,
   updateGameState,
@@ -127,7 +128,11 @@ export function TypingRaceGame({
   }, [state?.finishTimes.me, state?.finishTimes.her]);
 
   const handleNextRound = async () => {
-    const newPhrase = shuffleArray(TYPING_PHRASES.filter(p => p !== state.phrase))[0];
+    const availablePhrases = gameContent.typingPhrases.filter(
+      (phrase) => phrase !== state.phrase
+    );
+    const newPhrase =
+      shuffleArray(availablePhrases)[0] ?? gameContent.typingPhrases[0];
 
     await updateGameState({
       typingRace: {

@@ -3,11 +3,12 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import type { Role } from "../../types";
 import { Button } from "../Button";
-import { FIVE_LETTER_WORDS, shuffleArray } from "./constants";
+import { shuffleArray } from "./constants";
 import type { GameComponentProps } from "./types";
 
 export function WordGuessGame({
   game,
+  gameContent,
   role,
   getNickname,
   updateGameState,
@@ -104,7 +105,7 @@ export function WordGuessGame({
             />
             <p className="text-xs text-rose-400">Or pick a suggestion:</p>
             <div className="flex flex-wrap justify-center gap-2">
-              {shuffleArray(FIVE_LETTER_WORDS)
+              {shuffleArray(gameContent.wordGuessWords)
                 .slice(0, 4)
                 .map((word) => (
                   <button

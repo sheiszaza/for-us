@@ -2,11 +2,11 @@ import { motion } from "framer-motion";
 import { HelpCircle, Flame, Check } from "lucide-react";
 import type { Role } from "../../types";
 import { Button } from "../Button";
-import { TRUTHS, DARES } from "./constants";
 import type { GameComponentProps } from "./types";
 
 export function TruthOrDareGame({
   game,
+  gameContent,
   role,
   getNickname,
   updateGameState,
@@ -19,7 +19,7 @@ export function TruthOrDareGame({
   const partnerRole: Role = role === "me" ? "her" : "me";
 
   const handleChoice = async (type: "truth" | "dare") => {
-    const options = type === "truth" ? TRUTHS : DARES;
+    const options = type === "truth" ? gameContent.truths : gameContent.dares;
     const randomChallenge = options[Math.floor(Math.random() * options.length)];
 
     await updateGameState({
