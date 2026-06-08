@@ -14,13 +14,7 @@ import {
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
-import {
-  Grid2X2,
-  Heart,
-  ImagePlus,
-  List,
-  Plus,
-} from "lucide-react";
+import { Grid2X2, Heart, ImagePlus, List, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { db, storage } from "../firebaseData";
 import { useNicknames } from "../context/NicknameContext";
@@ -58,6 +52,7 @@ export function Memories() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const isSavingRef = useRef(false);
+  const canManageMemories = role === "me";
   const constraints = useMemo(() => [orderBy("date", "desc")], []);
   const {
     data: memories,
@@ -80,16 +75,23 @@ export function Memories() {
     setModalOpen(true);
   }, []);
 
-  const openEdit = useCallback((memory: Memory) => {
-    setEditing(memory);
-    setForm({
-      title: memory.title,
-      description: memory.description,
-      date: memory.date,
-    });
-    setFile(null);
-    setModalOpen(true);
-  }, []);
+  const openEdit = useCallback(
+    (memory: Memory) => {
+      if (!canManageMemories) {
+        return;
+      }
+
+      setEditing(memory);
+      setForm({
+        title: memory.title,
+        description: memory.description,
+        date: memory.date,
+      });
+      setFile(null);
+      setModalOpen(true);
+    },
+    [canManageMemories]
+  );
 
   const uploadImage = useCallback(async (image: File) => {
     const optimized = await optimizeImage(image);
@@ -182,9 +184,16 @@ export function Memories() {
     ? "Save memory"
     : "Add memory";
 
-  const requestDelete = useCallback((memory: Memory) => {
-    setMemoryToDelete(memory);
-  }, []);
+  const requestDelete = useCallback(
+    (memory: Memory) => {
+      if (!canManageMemories) {
+        return;
+      }
+
+      setMemoryToDelete(memory);
+    },
+    [canManageMemories]
+  );
 
   const closeDeleteModal = useCallback(() => {
     if (isDeleting) {
@@ -195,7 +204,7 @@ export function Memories() {
   }, [isDeleting]);
 
   const confirmDelete = useCallback(async () => {
-    if (!memoryToDelete || isDeleting) {
+    if (!memoryToDelete || isDeleting || !canManageMemories) {
       return;
     }
 
@@ -221,7 +230,7 @@ export function Memories() {
     } finally {
       setIsDeleting(false);
     }
-  }, [isDeleting, memoryToDelete]);
+  }, [canManageMemories, isDeleting, memoryToDelete]);
 
   return (
     <Page
@@ -312,51 +321,53 @@ export function Memories() {
                     Added by {getNickname(memory.createdBy)}
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    className="grid size-8 place-items-center rounded-full text-rose-600 transition hover:text-rose-800"
-                    onClick={() => openEdit(memory)}
-                    aria-label="Edit memory"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="size-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
+                {canManageMemories ? (
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      className="grid size-8 place-items-center rounded-full text-rose-600 transition hover:text-rose-800"
+                      onClick={() => openEdit(memory)}
+                      aria-label="Edit memory"
                     >
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    className="grid size-8 place-items-center rounded-full text-red-600 transition hover:text-red-800"
-                    onClick={() => requestDelete(memory)}
-                    aria-label="Delete memory"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="size-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="grid size-8 place-items-center rounded-full text-red-600 transition hover:text-red-800"
+                      onClick={() => requestDelete(memory)}
+                      aria-label="Delete memory"
                     >
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4h8v2" />
-                      <path d="M6 6l1 15h10l1-15" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                    </svg>
-                  </button>
-                </div>
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M6 6l1 15h10l1-15" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </Card>
           ))}
