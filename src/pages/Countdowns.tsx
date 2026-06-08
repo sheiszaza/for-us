@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type FormEvent } from 'react';
 import { addDoc, collection, deleteDoc, doc, orderBy, updateDoc } from 'firebase/firestore';
-import { CalendarHeart, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarHeart, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../firebaseData';
 import { useNicknames } from '../context/NicknameContext';
@@ -35,6 +35,8 @@ export function Countdowns() {
   const { getNickname } = useNicknames();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Countdown | null>(null);
+  const [countdownToDelete, setCountdownToDelete] = useState<Countdown | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [form, setForm] = useState(initialForm);
   const constraints = useMemo(() => [orderBy('targetDate', 'asc')], []);
   const { data: countdowns, loading, error } = useRealtimeCollection<Countdown>('countdowns', constraints);
@@ -86,18 +88,35 @@ export function Countdowns() {
     [closeModal, editing, form, role],
   );
 
-  const handleDelete = useCallback(async (countdown: Countdown) => {
-    if (!window.confirm('Delete this countdown?')) {
+  const requestDelete = useCallback((countdown: Countdown) => {
+    setCountdownToDelete(countdown);
+  }, []);
+
+  const closeDeleteModal = useCallback(() => {
+    if (isDeleting) {
       return;
     }
 
+    setCountdownToDelete(null);
+  }, [isDeleting]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!countdownToDelete || isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+
     try {
-      await deleteDoc(doc(db, 'countdowns', countdown.id));
+      await deleteDoc(doc(db, 'countdowns', countdownToDelete.id));
       toast.success('Countdown deleted.');
+      setCountdownToDelete(null);
     } catch (deleteError) {
       toast.error(deleteError instanceof Error ? deleteError.message : 'Countdown could not be deleted.');
+    } finally {
+      setIsDeleting(false);
     }
-  }, []);
+  }, [countdownToDelete, isDeleting]);
 
   return (
     <Page
@@ -143,13 +162,50 @@ export function Countdowns() {
                   <h2 className="mt-2 text-2xl font-black text-rose-950">{countdown.title}</h2>
                   <p className="mt-1 text-xs font-bold text-rose-500">Added by {getNickname(countdown.createdBy)}</p>
                 </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" className="size-9 p-0" onClick={() => openEdit(countdown)} aria-label="Edit countdown">
-                    <Pencil className="size-4" />
-                  </Button>
-                  <Button variant="ghost" className="size-9 p-0 text-rose-900" onClick={() => void handleDelete(countdown)} aria-label="Delete countdown">
-                    <Trash2 className="size-4" />
-                  </Button>
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    className="grid size-8 place-items-center rounded-full text-rose-600 transition hover:text-rose-800"
+                    onClick={() => openEdit(countdown)}
+                    aria-label="Edit countdown"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      className="size-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="grid size-8 place-items-center rounded-full text-red-600 transition hover:text-red-800"
+                    onClick={() => requestDelete(countdown)}
+                    aria-label="Delete countdown"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      className="size-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4h8v2" />
+                      <path d="M6 6l1 15h10l1-15" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                  </button>
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-4 gap-2">
@@ -177,6 +233,24 @@ export function Countdowns() {
           <Field label="Target date" type="datetime-local" value={form.targetDate} onChange={(event) => setForm((current) => ({ ...current, targetDate: event.target.value }))} required />
           <Button type="submit">{editing ? 'Save countdown' : 'Add countdown'}</Button>
         </form>
+      </Modal>
+
+      <Modal open={Boolean(countdownToDelete)} title="Delete countdown?" onClose={closeDeleteModal}>
+        <div className="grid gap-5">
+          <p className="text-sm leading-6 text-rose-700">
+            This will permanently delete
+            {countdownToDelete ? ` "${countdownToDelete.title}"` : ' this countdown'}.
+            This action cannot be undone.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="secondary" onClick={closeDeleteModal} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => void confirmDelete()} disabled={isDeleting} aria-busy={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </Page>
   );

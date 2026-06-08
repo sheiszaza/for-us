@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type FormEvent } from 'react';
 import { addDoc, collection, deleteDoc, doc, orderBy, updateDoc } from 'firebase/firestore';
-import { Check, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../firebaseData';
 import { useNicknames } from '../context/NicknameContext';
@@ -32,6 +32,8 @@ export function DateIdeas() {
   const { getNickname } = useNicknames();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<DateIdea | null>(null);
+  const [ideaToDelete, setIdeaToDelete] = useState<DateIdea | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [form, setForm] = useState(initialForm);
   const constraints = useMemo(() => [orderBy('title', 'asc')], []);
   const { data: ideas, loading, error } = useRealtimeCollection<DateIdea>('dateIdeas', constraints);
@@ -82,18 +84,35 @@ export function DateIdeas() {
     [closeModal, editing, form, role],
   );
 
-  const handleDelete = useCallback(async (idea: DateIdea) => {
-    if (!window.confirm('Delete this date idea?')) {
+  const requestDelete = useCallback((idea: DateIdea) => {
+    setIdeaToDelete(idea);
+  }, []);
+
+  const closeDeleteModal = useCallback(() => {
+    if (isDeleting) {
       return;
     }
 
+    setIdeaToDelete(null);
+  }, [isDeleting]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!ideaToDelete || isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+
     try {
-      await deleteDoc(doc(db, 'dateIdeas', idea.id));
+      await deleteDoc(doc(db, 'dateIdeas', ideaToDelete.id));
       toast.success('Date idea deleted.');
+      setIdeaToDelete(null);
     } catch (deleteError) {
       toast.error(deleteError instanceof Error ? deleteError.message : 'Date idea could not be deleted.');
+    } finally {
+      setIsDeleting(false);
     }
-  }, []);
+  }, [ideaToDelete, isDeleting]);
 
   const markCompleted = useCallback(async (idea: DateIdea) => {
     try {
@@ -133,18 +152,71 @@ export function DateIdeas() {
                 <p className="mt-2 text-sm leading-6 text-rose-700/75">{idea.description || 'A sweet plan waiting for details.'}</p>
                 <p className="mt-3 text-xs font-bold text-rose-500">Added by {getNickname(idea.createdBy)}</p>
               </div>
-              <div className="flex gap-1">
+              <div className="flex shrink-0 gap-1">
                 {idea.status !== 'completed' ? (
-                  <Button variant="ghost" className="size-9 p-0" onClick={() => void markCompleted(idea)} aria-label="Mark completed">
-                    <Check className="size-4" />
-                  </Button>
+                  <button
+                    type="button"
+                    className="grid size-8 place-items-center rounded-full text-emerald-600 transition hover:text-emerald-800"
+                    onClick={() => void markCompleted(idea)}
+                    aria-label="Mark completed"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      className="size-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  </button>
                 ) : null}
-                <Button variant="ghost" className="size-9 p-0" onClick={() => openEdit(idea)} aria-label="Edit date idea">
-                  <Pencil className="size-4" />
-                </Button>
-                <Button variant="ghost" className="size-9 p-0 text-rose-900" onClick={() => void handleDelete(idea)} aria-label="Delete date idea">
-                  <Trash2 className="size-4" />
-                </Button>
+                <button
+                  type="button"
+                  className="grid size-8 place-items-center rounded-full text-rose-600 transition hover:text-rose-800"
+                  onClick={() => openEdit(idea)}
+                  aria-label="Edit date idea"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="size-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="grid size-8 place-items-center rounded-full text-red-600 transition hover:text-red-800"
+                  onClick={() => requestDelete(idea)}
+                  aria-label="Delete date idea"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="size-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M6 6l1 15h10l1-15" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
+                </button>
               </div>
             </div>
           </Card>
@@ -169,6 +241,24 @@ export function DateIdeas() {
           </label>
           <Button type="submit">{editing ? 'Save idea' : 'Add idea'}</Button>
         </form>
+      </Modal>
+
+      <Modal open={Boolean(ideaToDelete)} title="Delete date idea?" onClose={closeDeleteModal}>
+        <div className="grid gap-5">
+          <p className="text-sm leading-6 text-rose-700">
+            This will permanently delete
+            {ideaToDelete ? ` "${ideaToDelete.title}"` : ' this date idea'}.
+            This action cannot be undone.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="secondary" onClick={closeDeleteModal} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => void confirmDelete()} disabled={isDeleting} aria-busy={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </Page>
   );

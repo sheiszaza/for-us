@@ -9,7 +9,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { motion } from "framer-motion";
-import { Mail, Pencil, Plus, Trash2 } from "lucide-react";
+import { Mail, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { db } from "../firebaseData";
 import { useNicknames } from "../context/NicknameContext";
@@ -43,6 +43,8 @@ export function Letters() {
   const [modalOpen, setModalOpen] = useState(false);
   const [reading, setReading] = useState<Letter | null>(null);
   const [editing, setEditing] = useState<Letter | null>(null);
+  const [letterToDelete, setLetterToDelete] = useState<Letter | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [form, setForm] = useState(initialForm);
   const constraints = useMemo(() => [orderBy("createdAt", "desc")], []);
   const {
@@ -102,22 +104,39 @@ export function Letters() {
     [closeEditor, editing, form, role]
   );
 
-  const handleDelete = useCallback(async (letter: Letter) => {
-    if (!window.confirm("Delete this letter?")) {
+  const requestDelete = useCallback((letter: Letter) => {
+    setLetterToDelete(letter);
+  }, []);
+
+  const closeDeleteModal = useCallback(() => {
+    if (isDeleting) {
       return;
     }
 
+    setLetterToDelete(null);
+  }, [isDeleting]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!letterToDelete || isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+
     try {
-      await deleteDoc(doc(db, "letters", letter.id));
+      await deleteDoc(doc(db, "letters", letterToDelete.id));
       toast.success("Letter deleted.");
+      setLetterToDelete(null);
     } catch (deleteError) {
       toast.error(
         deleteError instanceof Error
           ? deleteError.message
           : "Letter could not be deleted."
       );
+    } finally {
+      setIsDeleting(false);
     }
-  }, []);
+  }, [isDeleting, letterToDelete]);
 
   return (
     <Page
@@ -182,29 +201,56 @@ export function Letters() {
                   {formatShortDate(letter.createdAt)}
                 </p>
               </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  className="size-9 p-0"
+              <div className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  className="grid size-8 place-items-center rounded-full text-rose-600 transition hover:text-rose-800"
                   onClick={(event) => {
                     event.stopPropagation();
                     openEdit(letter);
                   }}
                   aria-label="Edit letter"
                 >
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="size-9 p-0 text-rose-900"
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="size-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="grid size-8 place-items-center rounded-full text-red-600 transition hover:text-red-800"
                   onClick={(event) => {
                     event.stopPropagation();
-                    void handleDelete(letter);
+                    requestDelete(letter);
                   }}
                   aria-label="Delete letter"
                 >
-                  <Trash2 className="size-4" />
-                </Button>
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="size-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M6 6l1 15h10l1-15" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
+                </button>
               </div>
             </div>
           </Card>
@@ -263,6 +309,37 @@ export function Letters() {
             </p>
           </motion.article>
         ) : null}
+      </Modal>
+
+      <Modal
+        open={Boolean(letterToDelete)}
+        title="Delete letter?"
+        onClose={closeDeleteModal}
+      >
+        <div className="grid gap-5">
+          <p className="text-sm leading-6 text-rose-700">
+            This will permanently delete
+            {letterToDelete ? ` "${letterToDelete.title}"` : " this letter"}.
+            This action cannot be undone.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="secondary"
+              onClick={closeDeleteModal}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => void confirmDelete()}
+              disabled={isDeleting}
+              aria-busy={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </Page>
   );

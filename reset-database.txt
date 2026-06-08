@@ -1,0 +1,11 @@
+npx -y firebase-tools@latest firestore:delete messages --recursive
+npx -y firebase-tools@latest firestore:delete homeNotes --recursive
+npx -y firebase-tools@latest firestore:delete memories --recursive
+npx -y firebase-tools@latest firestore:delete letters --recursive
+npx -y firebase-tools@latest firestore:delete countdowns --recursive
+npx -y firebase-tools@latest firestore:delete dateIdeas --recursive
+npx -y firebase-tools@latest firestore:delete locations --recursive
+npx -y firebase-tools@latest firestore:delete games --recursive
+npx -y firebase-tools@latest firestore:delete gameHistory --recursive
+npx -y firebase-tools@latest firestore:delete gameContent --recursive
+npx -y firebase-tools@latest firestore:delete settings --recursive
