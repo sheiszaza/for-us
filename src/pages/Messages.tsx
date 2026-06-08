@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -12,6 +13,7 @@ import {
   collection,
   doc,
   serverTimestamp,
+  setDoc,
   updateDoc,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
@@ -21,11 +23,41 @@ import { db, storage } from "../firebaseData";
 import { useNicknames } from "../context/NicknameContext";
 import { useRole } from "../context/RoleContext";
 import { usePaginatedMessages } from "../hooks/usePaginatedMessages";
-import { formatTime } from "../lib/date";
+import { formatTime, toDate } from "../lib/date";
 import { optimizeImage } from "../lib/image";
+import type { Role, TypingStatus } from "../types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
 import { Page } from "../components/Page";
+import { useRealtimeDoc } from "../hooks/useRealtimeDoc";
+
+const TYPING_IDLE_TIMEOUT_MS = 2_000;
+const TYPING_HEARTBEAT_MS = 4_000;
+const TYPING_STALE_TIMEOUT_MS = 8_000;
+
+const getPartnerRole = (role: Role): Role => (role === "me" ? "her" : "me");
+
+type TypingIndicatorProps = {
+  name: string;
+};
+
+const TypingIndicator = memo(function TypingIndicator({
+  name,
+}: TypingIndicatorProps) {
+  return (
+    <div className="flex justify-start">
+      <div className="rounded-[1.25rem] rounded-bl-sm border border-rose-100/50 bg-white/90 px-4 py-2.5 text-rose-500 shadow-md shadow-rose-200/20 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <span className="flex items-end gap-1" aria-hidden="true">
+            <span className="size-1.5 animate-bounce rounded-full bg-rose-400 [animation-delay:-0.2s]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-rose-400 [animation-delay:-0.1s]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-rose-400" />
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export function Messages() {
   const { role } = useRole();
@@ -40,10 +72,68 @@ export function Messages() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const typingIdleTimeoutRef = useRef<number | null>(null);
+  const publishedTypingRef = useRef(false);
+  const lastTypingWriteAtRef = useRef(0);
   const initialScrollDone = useRef(false);
   const prevMessageCount = useRef(0);
   const { messages, loading, loadingMore, error, hasMore, loadMore } =
     usePaginatedMessages();
+  const partnerRole = role ? getPartnerRole(role) : null;
+  const { data: partnerTypingStatus } = useRealtimeDoc<TypingStatus>(
+    "typingStatus",
+    partnerRole ?? "me",
+    Boolean(partnerRole)
+  );
+  const [partnerIsTyping, setPartnerIsTyping] = useState(false);
+
+  const clearTypingIdleTimer = useCallback(() => {
+    if (typingIdleTimeoutRef.current !== null) {
+      window.clearTimeout(typingIdleTimeoutRef.current);
+      typingIdleTimeoutRef.current = null;
+    }
+  }, []);
+
+  const publishTypingStatus = useCallback(
+    async (isTyping: boolean, force = false) => {
+      if (!role) {
+        return;
+      }
+
+      const now = Date.now();
+      if (!force) {
+        if (isTyping) {
+          const recentlyPublished =
+            publishedTypingRef.current &&
+            now - lastTypingWriteAtRef.current < TYPING_HEARTBEAT_MS;
+
+          if (recentlyPublished) {
+            return;
+          }
+        } else if (!publishedTypingRef.current) {
+          return;
+        }
+      }
+
+      publishedTypingRef.current = isTyping;
+      lastTypingWriteAtRef.current = now;
+
+      try {
+        await setDoc(
+          doc(db, "typingStatus", role),
+          {
+            role,
+            isTyping,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } catch {
+        // Typing presence is best-effort and should never block composing.
+      }
+    },
+    [role]
+  );
 
   const handleImageSelect = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -79,6 +169,25 @@ export function Messages() {
       }
     },
     []
+  );
+
+  const handleTextChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const nextText = event.target.value;
+      setText(nextText);
+      clearTypingIdleTimer();
+
+      if (!nextText.trim()) {
+        void publishTypingStatus(false, true);
+        return;
+      }
+
+      void publishTypingStatus(true);
+      typingIdleTimeoutRef.current = window.setTimeout(() => {
+        void publishTypingStatus(false, true);
+      }, TYPING_IDLE_TIMEOUT_MS);
+    },
+    [clearTypingIdleTimer, publishTypingStatus]
   );
 
   const clearImage = useCallback(() => {
@@ -120,6 +229,55 @@ export function Messages() {
   }, []);
 
   useEffect(() => {
+    publishedTypingRef.current = false;
+    lastTypingWriteAtRef.current = 0;
+
+    return () => {
+      clearTypingIdleTimer();
+
+      if (role && publishedTypingRef.current) {
+        void setDoc(
+          doc(db, "typingStatus", role),
+          {
+            role,
+            isTyping: false,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+    };
+  }, [clearTypingIdleTimer, role]);
+
+  useEffect(() => {
+    if (
+      !partnerRole ||
+      partnerTypingStatus?.role !== partnerRole ||
+      !partnerTypingStatus.isTyping ||
+      !partnerTypingStatus.updatedAt
+    ) {
+      setPartnerIsTyping(false);
+      return;
+    }
+
+    const updatedAtMs = toDate(partnerTypingStatus.updatedAt).getTime();
+    const timeUntilStale = TYPING_STALE_TIMEOUT_MS - (Date.now() - updatedAtMs);
+
+    if (timeUntilStale <= 0) {
+      setPartnerIsTyping(false);
+      return;
+    }
+
+    setPartnerIsTyping(true);
+    const timeoutId = window.setTimeout(
+      () => setPartnerIsTyping(false),
+      timeUntilStale
+    );
+
+    return () => window.clearTimeout(timeoutId);
+  }, [partnerRole, partnerTypingStatus]);
+
+  useEffect(() => {
     if (messages.length === 0) return;
 
     if (!initialScrollDone.current) {
@@ -144,6 +302,24 @@ export function Messages() {
 
     prevMessageCount.current = messages.length;
   }, [messages.length]);
+
+  useEffect(() => {
+    if (!partnerIsTyping) {
+      return;
+    }
+
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    if (distanceFromBottom < 150) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [partnerIsTyping]);
 
   const handleScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
@@ -204,6 +380,8 @@ export function Messages() {
           ...(imageData ?? {}),
         });
         setText("");
+        clearTypingIdleTimer();
+        void publishTypingStatus(false, true);
         clearImage();
       } catch (sendError) {
         toast.error(
@@ -216,7 +394,15 @@ export function Messages() {
         setUploadProgress(null);
       }
     },
-    [clearImage, role, selectedImage, text, uploadImage]
+    [
+      clearImage,
+      clearTypingIdleTimer,
+      publishTypingStatus,
+      role,
+      selectedImage,
+      text,
+      uploadImage,
+    ]
   );
 
   return (
@@ -255,18 +441,19 @@ export function Messages() {
             <p className="rounded-3xl bg-white/70 p-4 text-sm font-semibold text-rose-700">
               {error}
             </p>
-          ) : messages.length === 0 ? (
-            <EmptyState
-              icon={Heart}
-              title="No messages yet ❤️"
-              description="Start with something tiny, sweet, or wonderfully random."
-            />
           ) : (
             <div className="grid gap-3">
               {loadingMore ? (
                 <div className="flex justify-center py-2">
                   <Loader2 className="size-5 animate-spin text-rose-400" />
                 </div>
+              ) : null}
+              {messages.length === 0 ? (
+                <EmptyState
+                  icon={Heart}
+                  title="No messages yet ❤️"
+                  description="Start with something tiny, sweet, or wonderfully random."
+                />
               ) : null}
               {messages.map((message) => {
                 const isMine = message.from === role;
@@ -280,53 +467,56 @@ export function Messages() {
                       isMine ? "justify-end" : "justify-start"
                     }`}
                   >
-                            <div
-                              className={`max-w-[80%] rounded-[1.25rem] ${
-                                isMine
-                                  ? "rounded-br-sm bg-gradient-to-br from-rose-500 via-rose-500 to-pink-500 text-white shadow-lg shadow-rose-400/25"
-                                  : "rounded-bl-sm border border-rose-100/50 bg-white/90 text-rose-950 shadow-md shadow-rose-200/20 backdrop-blur-sm"
-                              } ${message.imageUrl ? "overflow-hidden" : "px-4 py-2.5"}`}
-                            >
-                              {message.imageUrl ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setFullscreenImage(message.imageUrl!)}
-                                  className="block w-full"
-                                >
-                                  <img
-                                    src={message.imageUrl}
-                                    alt="Shared image"
-                                    className="max-h-64 w-full object-cover"
-                                  />
-                                </button>
-                              ) : null}
-                              {message.text ? (
-                                <p
-                                  className={`whitespace-pre-wrap text-[0.9rem] leading-relaxed ${
-                                    message.imageUrl ? "px-4 pt-2.5" : ""
-                                  }`}
-                                >
-                                  {message.text}
-                                </p>
-                              ) : null}
-                              <div
-                                className={`flex items-center gap-1.5 text-[0.65rem] font-medium tracking-wide ${
-                                  isMine ? "text-white/70" : "text-rose-400/80"
-                                } ${
-                                  message.imageUrl
-                                    ? "px-4 pb-2.5 pt-1"
-                                    : "mt-1"
-                                }`}
-                              >
-                                <span>{formatTime(message.createdAt)}</span>
-                                {isMine ? (
-                                  <span className="opacity-90">• {seenByOther ? "Seen" : "Sent"}</span>
-                                ) : null}
-                              </div>
-                            </div>
+                    <div
+                      className={`max-w-[80%] rounded-[1.25rem] ${
+                        isMine
+                          ? "rounded-br-sm bg-gradient-to-br from-rose-500 via-rose-500 to-pink-500 text-white shadow-lg shadow-rose-400/25"
+                          : "rounded-bl-sm border border-rose-100/50 bg-white/90 text-rose-950 shadow-md shadow-rose-200/20 backdrop-blur-sm"
+                      } ${
+                        message.imageUrl ? "overflow-hidden" : "px-4 py-2.5"
+                      }`}
+                    >
+                      {message.imageUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setFullscreenImage(message.imageUrl!)}
+                          className="block w-full"
+                        >
+                          <img
+                            src={message.imageUrl}
+                            alt="Shared image"
+                            className="max-h-64 w-full object-cover"
+                          />
+                        </button>
+                      ) : null}
+                      {message.text ? (
+                        <p
+                          className={`whitespace-pre-wrap text-[0.9rem] leading-relaxed ${
+                            message.imageUrl ? "px-4 pt-2.5" : ""
+                          }`}
+                        >
+                          {message.text}
+                        </p>
+                      ) : null}
+                      <div
+                        className={`flex items-center gap-1.5 text-[0.65rem] font-medium tracking-wide ${
+                          isMine ? "text-white/70" : "text-rose-400/80"
+                        } ${message.imageUrl ? "px-4 pb-2.5 pt-1" : "mt-1"}`}
+                      >
+                        <span>{formatTime(message.createdAt)}</span>
+                        {isMine ? (
+                          <span className="opacity-90">
+                            • {seenByOther ? "Seen" : "Sent"}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                 );
               })}
+              {partnerIsTyping && partnerRole ? (
+                <TypingIndicator name={getNickname(partnerRole)} />
+              ) : null}
               <div ref={bottomRef} />
             </div>
           )}
@@ -395,13 +585,15 @@ export function Messages() {
           </button>
           <input
             value={text}
-            onChange={(event) => setText(event.target.value)}
+            onChange={handleTextChange}
             placeholder="Write something sweet..."
             className="min-w-0 flex-1 rounded-full border border-rose-100 bg-white/85 px-4 py-3 text-sm text-rose-950 outline-none focus:border-rose-300 focus:ring-4 focus:ring-rose-100"
           />
           <Button
             type="submit"
-            disabled={sending || imageProcessing || (!text.trim() && !selectedImage)}
+            disabled={
+              sending || imageProcessing || (!text.trim() && !selectedImage)
+            }
             className="size-14 shrink-0 p-0"
             aria-label="Send message"
           >

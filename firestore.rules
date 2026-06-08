@@ -88,6 +88,15 @@ service cloud.firestore {
         && (!('imagePath' in data) || data.imagePath == null || data.imagePath is string);
     }
 
+    function validTypingStatus(data, typingRole) {
+      return validRole(typingRole)
+        && data.keys().hasAll(['role', 'isTyping', 'updatedAt'])
+        && data.keys().hasOnly(['role', 'isTyping', 'updatedAt'])
+        && data.role == typingRole
+        && data.isTyping is bool
+        && data.updatedAt is timestamp;
+    }
+
     match /messages/{messageId} {
       // Only anonymous Firebase users can read/write the private couple chat.
       allow read: if signedIn();
@@ -97,6 +106,13 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenByMe', 'seenByHer'])
         && request.resource.data.seenByMe is bool
         && request.resource.data.seenByHer is bool;
+      allow delete: if false;
+    }
+
+    match /typingStatus/{typingRole} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && validTypingStatus(request.resource.data, typingRole);
       allow delete: if false;
     }
 

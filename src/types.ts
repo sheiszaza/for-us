@@ -15,6 +15,12 @@ export type Message = {
   imagePath?: string;
 };
 
+export type TypingStatus = {
+  role: Role;
+  isTyping: boolean;
+  updatedAt?: FirestoreDate | null;
+};
+
 export type HomeNote = {
   id: string;
   text: string;
