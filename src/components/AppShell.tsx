@@ -45,6 +45,7 @@ const gameInviteNames: Record<GameType, string> = {
   "memory-match": "Memory Match",
   "word-guess": "Word Guess",
   "mind-match": "Mind Match",
+  "stop-categories": "Stop Categories",
   "letter-duel": "Letter Duel",
   "truth-or-dare": "Truth or Dare",
   "rock-paper-scissors": "Rock Paper Scissors",

@@ -102,6 +102,7 @@ export type GameType =
   | 'memory-match'
   | 'word-guess'
   | 'mind-match'
+  | 'stop-categories'
   | 'letter-duel'
   | 'truth-or-dare'
   | 'rock-paper-scissors'
@@ -208,6 +209,45 @@ export type MindMatchState = {
   winningWord: string | null;
 };
 
+export type StopCategoriesCategory =
+  | 'person'
+  | 'animal'
+  | 'thing'
+  | 'food'
+  | 'country';
+
+export type StopCategoriesAnswers = Record<StopCategoriesCategory, string>;
+
+export type StopCategoriesPhase =
+  | 'selecting-letter'
+  | 'typing'
+  | 'revealing'
+  | 'round-result'
+  | 'finished';
+
+export type StopCategoriesRound = {
+  round: number;
+  letter: string;
+  stoppedBy: Role;
+  answers: Record<Role, StopCategoriesAnswers>;
+  scores: Record<Role, number>;
+};
+
+export type StopCategoriesState = {
+  currentTurn: Role;
+  letter: string | null;
+  letterSelectionStartedAt: number;
+  answers: Record<Role, StopCategoriesAnswers>;
+  stoppedBy: Role | null;
+  scores: Record<Role, number>;
+  roundScores: Record<Role, number>;
+  rounds: StopCategoriesRound[];
+  round: number;
+  maxRounds: number;
+  phase: StopCategoriesPhase;
+  revealedCategoryIndex: number;
+};
+
 export type LetterDuelState = {
   selectedLetters: { me: string | null; her: string | null };
   currentTurn: Role;
@@ -309,6 +349,7 @@ export type GameState = {
   memoryMatch?: MemoryMatchState;
   wordGuess?: WordGuessState;
   mindMatch?: MindMatchState;
+  stopCategories?: StopCategoriesState;
   letterDuel?: LetterDuelState;
   truthOrDare?: TruthOrDareState;
   rockPaperScissors?: RockPaperScissorsState;

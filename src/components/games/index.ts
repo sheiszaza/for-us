@@ -4,6 +4,7 @@ export { WouldYouRatherGame } from "./WouldYouRatherGame";
 export { MemoryMatchGame } from "./MemoryMatchGame";
 export { WordGuessGame } from "./WordGuessGame";
 export { MindMatchGame } from "./MindMatchGame";
+export { StopCategoriesGame } from "./StopCategoriesGame";
 export { LetterDuelGame } from "./LetterDuelGame";
 export { TruthOrDareGame } from "./TruthOrDareGame";
 export { RockPaperScissorsGame } from "./RockPaperScissorsGame";

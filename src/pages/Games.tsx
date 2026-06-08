@@ -52,6 +52,7 @@ import {
   MemoryMatchGame,
   WordGuessGame,
   MindMatchGame,
+  StopCategoriesGame,
   LetterDuelGame,
   TruthOrDareGame,
   RockPaperScissorsGame,
@@ -103,6 +104,12 @@ const GAME_CONFIG: Record<
     icon: Sparkles,
     description: "Write the same secret word at the same time",
     color: "from-pink-400 to-fuchsia-500",
+  },
+  "stop-categories": {
+    name: "Stop Categories",
+    icon: Type,
+    description: "Pick a letter, fill every category, then stop the round",
+    color: "from-sky-400 to-cyan-500",
   },
   "letter-duel": {
     name: "Letter Duel",
@@ -178,7 +185,11 @@ function getSecretCode() {
   return Array.from({ length: 4 }, () => Math.floor(Math.random() * 6));
 }
 
-function createInitialGameState(type: GameType, gameContent: GameContent) {
+function createInitialGameState(
+  type: GameType,
+  gameContent: GameContent,
+  startingRole: Role = "me"
+) {
   switch (type) {
     case "tic-tac-toe":
       return {
@@ -247,6 +258,26 @@ function createInitialGameState(type: GameType, gameContent: GameContent) {
           showResult: false,
           matched: false,
           winningWord: null,
+        },
+      };
+    case "stop-categories":
+      return {
+        stopCategories: {
+          currentTurn: startingRole,
+          letter: null,
+          letterSelectionStartedAt: Date.now(),
+          answers: {
+            me: { person: "", animal: "", thing: "", food: "", country: "" },
+            her: { person: "", animal: "", thing: "", food: "", country: "" },
+          },
+          stoppedBy: null,
+          scores: { me: 0, her: 0 },
+          roundScores: { me: 0, her: 0 },
+          rounds: [],
+          round: 1,
+          maxRounds: 5,
+          phase: "selecting-letter" as const,
+          revealedCategoryIndex: 0,
         },
       };
     case "letter-duel":
@@ -388,7 +419,7 @@ export function Games() {
           createdBy: role,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          state: createInitialGameState(type, gameContent),
+          state: createInitialGameState(type, gameContent, role),
         };
 
         await setDoc(doc(db, "games", "current"), gameData);
@@ -411,6 +442,7 @@ export function Games() {
           currentGame.state.loveQuiz?.scores ||
           currentGame.state.rockPaperScissors?.scores ||
           currentGame.state.typingRace?.scores ||
+          currentGame.state.stopCategories?.scores ||
           currentGame.state.dotsAndBoxes?.scores ||
           currentGame.state.simonSays?.scores ||
           currentGame.state.reactionDuel?.scores;
@@ -981,6 +1013,8 @@ function ActiveGame({
         return <WordGuessGame {...props} />;
       case "mind-match":
         return <MindMatchGame {...props} />;
+      case "stop-categories":
+        return <StopCategoriesGame {...props} />;
       case "letter-duel":
         return <LetterDuelGame {...props} />;
       case "truth-or-dare":
