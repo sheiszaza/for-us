@@ -3,6 +3,7 @@ export { LoveQuizGame } from "./LoveQuizGame";
 export { WouldYouRatherGame } from "./WouldYouRatherGame";
 export { MemoryMatchGame } from "./MemoryMatchGame";
 export { WordGuessGame } from "./WordGuessGame";
+export { MindMatchGame } from "./MindMatchGame";
 export { LetterDuelGame } from "./LetterDuelGame";
 export { TruthOrDareGame } from "./TruthOrDareGame";
 export { RockPaperScissorsGame } from "./RockPaperScissorsGame";

@@ -101,6 +101,7 @@ export type GameType =
   | 'would-you-rather'
   | 'memory-match'
   | 'word-guess'
+  | 'mind-match'
   | 'letter-duel'
   | 'truth-or-dare'
   | 'rock-paper-scissors'
@@ -189,6 +190,22 @@ export type WordGuessState = {
   won: boolean;
   lost: boolean;
   setBy: Role;
+};
+
+export type MindMatchRound = {
+  round: number;
+  meWord: string;
+  herWord: string;
+  matched: boolean;
+};
+
+export type MindMatchState = {
+  choices: { me: string | null; her: string | null };
+  rounds: MindMatchRound[];
+  round: number;
+  showResult: boolean;
+  matched: boolean;
+  winningWord: string | null;
 };
 
 export type LetterDuelState = {
@@ -291,6 +308,7 @@ export type GameState = {
   wouldYouRather?: WouldYouRatherState;
   memoryMatch?: MemoryMatchState;
   wordGuess?: WordGuessState;
+  mindMatch?: MindMatchState;
   letterDuel?: LetterDuelState;
   truthOrDare?: TruthOrDareState;
   rockPaperScissors?: RockPaperScissorsState;

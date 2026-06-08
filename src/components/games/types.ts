@@ -6,5 +6,6 @@ export type GameComponentProps = {
   role: Role | null;
   getNickname: (role: Role) => string;
   updateGameState: (state: Partial<Game["state"]>) => Promise<void>;
+  updateGameFields: (fields: Record<string, unknown>) => Promise<void>;
   endGame: (winner?: Role | "draw") => Promise<void>;
 };

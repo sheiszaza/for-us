@@ -7,6 +7,7 @@ import {
   deleteDoc,
   serverTimestamp,
   orderBy,
+  updateDoc,
 } from "firebase/firestore";
 import {
   Gamepad2,
@@ -50,6 +51,7 @@ import {
   WouldYouRatherGame,
   MemoryMatchGame,
   WordGuessGame,
+  MindMatchGame,
   LetterDuelGame,
   TruthOrDareGame,
   RockPaperScissorsGame,
@@ -95,6 +97,12 @@ const GAME_CONFIG: Record<
     icon: Type,
     description: "Guess your partner's word",
     color: "from-blue-400 to-indigo-500",
+  },
+  "mind-match": {
+    name: "Mind Match",
+    icon: Sparkles,
+    description: "Write the same secret word at the same time",
+    color: "from-pink-400 to-fuchsia-500",
   },
   "letter-duel": {
     name: "Letter Duel",
@@ -228,6 +236,17 @@ function createInitialGameState(type: GameType, gameContent: GameContent) {
           won: false,
           lost: false,
           setBy: "me" as Role,
+        },
+      };
+    case "mind-match":
+      return {
+        mindMatch: {
+          choices: { me: null, her: null },
+          rounds: [],
+          round: 1,
+          showResult: false,
+          matched: false,
+          winningWord: null,
         },
       };
     case "letter-duel":
@@ -440,6 +459,22 @@ export function Games() {
     [currentGame]
   );
 
+  const updateGameFields = useCallback(
+    async (fields: Record<string, unknown>) => {
+      if (!currentGame) return;
+
+      try {
+        await updateDoc(doc(db, "games", "current"), {
+          ...fields,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (error) {
+        toast.error("Couldn't update game");
+      }
+    },
+    [currentGame]
+  );
+
   const stats = useMemo(() => {
     const meWins = gameHistory.filter((g) => g.winner === "me").length;
     const herWins = gameHistory.filter((g) => g.winner === "her").length;
@@ -534,6 +569,7 @@ export function Games() {
         role={role}
         getNickname={getNickname}
         updateGameState={updateGameState}
+        updateGameFields={updateGameFields}
         endGame={endGame}
         gameContent={gameContent}
       />
@@ -661,7 +697,7 @@ export function Games() {
       )}
 
       <motion.div
-        className="grid gap-4 sm:grid-cols-2"
+        className="grid grid-cols-2 items-stretch gap-3 sm:gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
@@ -672,6 +708,7 @@ export function Games() {
           return (
             <motion.div
               key={type}
+              className="h-full"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -679,21 +716,21 @@ export function Games() {
               <Card
                 asButton
                 onClick={() => setSelectedGame(type)}
-                className="group relative overflow-hidden"
+                className="group relative flex h-full min-h-32 items-center overflow-hidden !p-4 sm:min-h-36"
               >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${config.color} opacity-0 transition-opacity group-hover:opacity-10`}
                 />
                 <div className="relative z-10">
                   <div
-                    className={`mb-4 inline-flex rounded-2xl bg-gradient-to-br ${config.color} p-3 text-white shadow-lg`}
+                    className={`mb-3 inline-flex rounded-2xl bg-gradient-to-br ${config.color} p-3 text-white shadow-lg`}
                   >
                     <Icon className="size-6" />
                   </div>
-                  <h3 className="text-lg font-black text-rose-950">
+                  <h3 className="text-base font-black text-rose-950 sm:text-lg">
                     {config.name}
                   </h3>
-                  <p className="mt-1 text-sm text-rose-700/75">
+                  <p className="mt-1 line-clamp-2 text-xs text-rose-700/75 sm:text-sm">
                     {config.description}
                   </p>
                 </div>
@@ -887,6 +924,7 @@ type ActiveGameProps = {
   role: Role | null;
   getNickname: (role: Role) => string;
   updateGameState: (state: Partial<Game["state"]>) => Promise<void>;
+  updateGameFields: (fields: Record<string, unknown>) => Promise<void>;
   endGame: (winner?: Role | "draw") => Promise<void>;
 };
 
@@ -896,6 +934,7 @@ function ActiveGame({
   role,
   getNickname,
   updateGameState,
+  updateGameFields,
   endGame,
 }: ActiveGameProps) {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -925,6 +964,7 @@ function ActiveGame({
       role,
       getNickname,
       updateGameState,
+      updateGameFields,
       endGame,
     };
 
@@ -939,6 +979,8 @@ function ActiveGame({
         return <MemoryMatchGame {...props} />;
       case "word-guess":
         return <WordGuessGame {...props} />;
+      case "mind-match":
+        return <MindMatchGame {...props} />;
       case "letter-duel":
         return <LetterDuelGame {...props} />;
       case "truth-or-dare":
