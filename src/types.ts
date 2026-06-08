@@ -209,7 +209,8 @@ export type RockPaperScissorsState = {
 
 export type TypingRaceState = {
   phrase: string;
-  progress: { me: string; her: string };
+  progress: { me: number; her: number };
+  accuracies?: { me: number; her: number };
   startTime: number | null;
   finishTimes: { me: number | null; her: number | null };
   round: number;

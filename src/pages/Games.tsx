@@ -245,7 +245,8 @@ function createInitialGameState(type: GameType, gameContent: GameContent) {
       return {
         typingRace: {
           phrase: shuffleArray(gameContent.typingPhrases)[0],
-          progress: { me: "", her: "" },
+          progress: { me: 0, her: 0 },
+          accuracies: { me: 100, her: 100 },
           startTime: null,
           finishTimes: { me: null, her: null },
           round: 1,

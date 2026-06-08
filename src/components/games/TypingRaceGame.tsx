@@ -5,6 +5,18 @@ import { Button } from "../Button";
 import { shuffleArray } from "./constants";
 import type { GameComponentProps } from "./types";
 
+type RoleMetrics = Record<Role, number>;
+
+const getProgressLength = (progress: number | string | undefined) => {
+  if (typeof progress === "number") return progress;
+  return progress?.length ?? 0;
+};
+
+const getProgressPercent = (progress: number, phraseLength: number) => {
+  if (phraseLength === 0) return 0;
+  return Math.min(100, Math.round((progress / phraseLength) * 100));
+};
+
 export function TypingRaceGame({
   game,
   gameContent,
@@ -16,14 +28,17 @@ export function TypingRaceGame({
   const state = game.state.typingRace;
   const [localInput, setLocalInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const lastSyncRef = useRef<string>("");
+  const roundKeyRef = useRef("");
 
   useEffect(() => {
-    if (state && role && state.progress[role] !== lastSyncRef.current) {
-      setLocalInput(state.progress[role]);
-      lastSyncRef.current = state.progress[role];
+    if (!state) return;
+
+    const roundKey = `${state.round}:${state.phrase}`;
+    if (roundKeyRef.current !== roundKey) {
+      roundKeyRef.current = roundKey;
+      setLocalInput("");
     }
-  }, [state, role]);
+  }, [state?.phrase, state?.round]);
 
   useEffect(() => {
     if (inputRef.current && state && !state.showResult) {
@@ -34,11 +49,10 @@ export function TypingRaceGame({
   if (!state) return null;
 
   const partnerRole: Role = role === "me" ? "her" : "me";
-  const myProgress = role ? state.progress[role] : "";
-  const partnerProgress = state.progress[partnerRole];
+  const myProgress = role ? getProgressLength(state.progress[role]) : 0;
+  const partnerProgress = getProgressLength(state.progress[partnerRole]);
   const myFinished = role ? state.finishTimes[role] !== null : false;
   const partnerFinished = state.finishTimes[partnerRole] !== null;
-  const bothFinished = myFinished && partnerFinished;
 
   const calculateAccuracy = (typed: string, target: string) => {
     if (typed.length === 0) return 100;
@@ -49,17 +63,25 @@ export function TypingRaceGame({
     return Math.round((correct / typed.length) * 100);
   };
 
-  const myAccuracy = calculateAccuracy(myProgress, state.phrase);
-  const partnerAccuracy = calculateAccuracy(partnerProgress, state.phrase);
+  const myAccuracy = calculateAccuracy(localInput, state.phrase);
 
   const handleInputChange = async (value: string) => {
     if (!role || myFinished || state.showResult) return;
 
     setLocalInput(value);
-    lastSyncRef.current = value;
 
     const startTime = state.startTime || Date.now();
     const isComplete = value === state.phrase;
+    const newProgress: RoleMetrics = {
+      me: getProgressLength(state.progress.me),
+      her: getProgressLength(state.progress.her),
+      [role]: value.length,
+    };
+    const newAccuracies: RoleMetrics = {
+      me: state.accuracies?.me ?? 100,
+      her: state.accuracies?.her ?? 100,
+      [role]: calculateAccuracy(value, state.phrase),
+    };
 
     const newFinishTimes = { ...state.finishTimes };
     if (isComplete) {
@@ -69,7 +91,8 @@ export function TypingRaceGame({
     await updateGameState({
       typingRace: {
         ...state,
-        progress: { ...state.progress, [role]: value },
+        progress: newProgress,
+        accuracies: newAccuracies,
         startTime,
         finishTimes: newFinishTimes,
       },
@@ -138,7 +161,8 @@ export function TypingRaceGame({
       typingRace: {
         ...state,
         phrase: newPhrase,
-        progress: { me: "", her: "" },
+        progress: { me: 0, her: 0 },
+        accuracies: { me: 100, her: 100 },
         startTime: null,
         finishTimes: { me: null, her: null },
         round: state.round + 1,
@@ -147,7 +171,7 @@ export function TypingRaceGame({
       },
     });
     setLocalInput("");
-    lastSyncRef.current = "";
+    roundKeyRef.current = `${state.round + 1}:${newPhrase}`;
   };
 
   const formatTime = (ms: number) => {
@@ -261,7 +285,7 @@ export function TypingRaceGame({
                   : "DNF"}
               </p>
               <p className="text-xs text-rose-400">
-                {calculateAccuracy(state.progress.me, state.phrase)}% accuracy
+                {state.accuracies?.me ?? 100}% accuracy
               </p>
             </div>
             <div className="rounded-xl bg-fuchsia-50 p-3">
@@ -274,7 +298,7 @@ export function TypingRaceGame({
                   : "DNF"}
               </p>
               <p className="text-xs text-fuchsia-400">
-                {calculateAccuracy(state.progress.her, state.phrase)}% accuracy
+                {state.accuracies?.her ?? 100}% accuracy
               </p>
             </div>
           </div>
@@ -329,7 +353,7 @@ export function TypingRaceGame({
             />
             <div className="flex justify-between text-xs">
               <span className="text-rose-400">
-                {myProgress.length} / {state.phrase.length} characters
+                {localInput.length} / {state.phrase.length} characters
               </span>
               <span className={myAccuracy === 100 ? "text-emerald-500" : "text-rose-500"}>
                 {myAccuracy}% accuracy
@@ -361,7 +385,7 @@ export function TypingRaceGame({
                     {myFinished && " ✓"}
                   </span>
                   <span className="text-rose-400">
-                    {Math.round((myProgress.length / state.phrase.length) * 100)}%
+                    {getProgressPercent(myProgress, state.phrase.length)}%
                   </span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-rose-100">
@@ -369,7 +393,7 @@ export function TypingRaceGame({
                     className="h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-500"
                     initial={{ width: 0 }}
                     animate={{
-                      width: `${(myProgress.length / state.phrase.length) * 100}%`,
+                      width: `${getProgressPercent(myProgress, state.phrase.length)}%`,
                     }}
                     transition={{ duration: 0.1 }}
                   />
@@ -382,7 +406,7 @@ export function TypingRaceGame({
                     {partnerFinished && " ✓"}
                   </span>
                   <span className="text-fuchsia-400">
-                    {Math.round((partnerProgress.length / state.phrase.length) * 100)}%
+                    {getProgressPercent(partnerProgress, state.phrase.length)}%
                   </span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-fuchsia-100">
@@ -390,7 +414,7 @@ export function TypingRaceGame({
                     className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 to-purple-500"
                     initial={{ width: 0 }}
                     animate={{
-                      width: `${(partnerProgress.length / state.phrase.length) * 100}%`,
+                      width: `${getProgressPercent(partnerProgress, state.phrase.length)}%`,
                     }}
                     transition={{ duration: 0.1 }}
                   />
