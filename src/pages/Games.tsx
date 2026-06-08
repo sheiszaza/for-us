@@ -39,6 +39,7 @@ import type {
   GameHistory,
   GameType,
   Role,
+  DamaCell,
   TicTacToeCell,
 } from "../types";
 import { Button } from "../components/Button";
@@ -59,6 +60,7 @@ import {
   TypingRaceGame,
   ConnectFourGame,
   DotsAndBoxesGame,
+  DamaGame,
   SimonSaysGame,
   ReactionDuelGame,
   CodeBreakerGame,
@@ -147,6 +149,12 @@ const GAME_CONFIG: Record<
     description: "Claim lines, complete boxes, steal turns",
     color: "from-amber-400 to-rose-500",
   },
+  dama: {
+    name: "Dama",
+    icon: Crown,
+    description: "Turkish checkers with sideways moves and bold captures",
+    color: "from-stone-500 to-amber-500",
+  },
   "simon-says": {
     name: "Simon Says",
     icon: Sparkles,
@@ -183,6 +191,17 @@ function getReactionReadyAt() {
 
 function getSecretCode() {
   return Array.from({ length: 4 }, () => Math.floor(Math.random() * 6));
+}
+
+function createInitialDamaBoard(): DamaCell[] {
+  return Array.from({ length: 64 }, (_, index) => {
+    const row = Math.floor(index / 8);
+
+    if (row === 1 || row === 2) return { role: "her", king: false };
+    if (row === 5 || row === 6) return { role: "me", king: false };
+
+    return null;
+  });
 }
 
 function createInitialGameState(
@@ -343,6 +362,17 @@ function createInitialGameState(
           finished: false,
         },
       };
+    case "dama":
+      return {
+        dama: {
+          board: createInitialDamaBoard(),
+          currentTurn: startingRole,
+          winner: null,
+          captured: { me: 0, her: 0 },
+          lastMove: [],
+          forcedFrom: null,
+        },
+      };
     case "simon-says":
       return {
         simonSays: {
@@ -444,6 +474,7 @@ export function Games() {
           currentGame.state.typingRace?.scores ||
           currentGame.state.stopCategories?.scores ||
           currentGame.state.dotsAndBoxes?.scores ||
+          currentGame.state.dama?.captured ||
           currentGame.state.simonSays?.scores ||
           currentGame.state.reactionDuel?.scores;
 
@@ -1027,6 +1058,8 @@ function ActiveGame({
         return <ConnectFourGame {...props} />;
       case "dots-and-boxes":
         return <DotsAndBoxesGame {...props} />;
+      case "dama":
+        return <DamaGame {...props} />;
       case "simon-says":
         return <SimonSaysGame {...props} />;
       case "reaction-duel":

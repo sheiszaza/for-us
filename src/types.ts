@@ -109,6 +109,7 @@ export type GameType =
   | 'typing-race'
   | 'connect-four'
   | 'dots-and-boxes'
+  | 'dama'
   | 'simon-says'
   | 'reaction-duel'
   | 'code-breaker';
@@ -303,6 +304,22 @@ export type DotsAndBoxesState = {
   finished: boolean;
 };
 
+export type DamaPiece = {
+  role: Role;
+  king: boolean;
+};
+
+export type DamaCell = DamaPiece | null;
+
+export type DamaState = {
+  board: DamaCell[];
+  currentTurn: Role;
+  winner: Role | 'draw' | null;
+  captured: { me: number; her: number };
+  lastMove: number[];
+  forcedFrom: number | null;
+};
+
 export type SimonSaysState = {
   sequence: number[];
   inputs: { me: number[]; her: number[] };
@@ -356,6 +373,7 @@ export type GameState = {
   typingRace?: TypingRaceState;
   connectFour?: ConnectFourState;
   dotsAndBoxes?: DotsAndBoxesState;
+  dama?: DamaState;
   simonSays?: SimonSaysState;
   reactionDuel?: ReactionDuelState;
   codeBreaker?: CodeBreakerState;

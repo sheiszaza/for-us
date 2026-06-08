@@ -52,6 +52,7 @@ const gameInviteNames: Record<GameType, string> = {
   "typing-race": "Typing Race",
   "connect-four": "Connect Four",
   "dots-and-boxes": "Dots & Boxes",
+  dama: "Dama",
   "simon-says": "Simon Says",
   "reaction-duel": "Reaction Duel",
   "code-breaker": "Code Breaker",
