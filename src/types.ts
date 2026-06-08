@@ -101,6 +101,7 @@ export type GameType =
   | 'would-you-rather'
   | 'memory-match'
   | 'word-guess'
+  | 'letter-duel'
   | 'truth-or-dare'
   | 'rock-paper-scissors'
   | 'typing-race'
@@ -188,6 +189,14 @@ export type WordGuessState = {
   won: boolean;
   lost: boolean;
   setBy: Role;
+};
+
+export type LetterDuelState = {
+  selectedLetters: { me: string | null; her: string | null };
+  currentTurn: Role;
+  phase: 'selecting' | 'racing' | 'finished';
+  winner: Role | null;
+  winningWord: string;
 };
 
 export type TruthOrDareState = {
@@ -282,6 +291,7 @@ export type GameState = {
   wouldYouRather?: WouldYouRatherState;
   memoryMatch?: MemoryMatchState;
   wordGuess?: WordGuessState;
+  letterDuel?: LetterDuelState;
   truthOrDare?: TruthOrDareState;
   rockPaperScissors?: RockPaperScissorsState;
   typingRace?: TypingRaceState;

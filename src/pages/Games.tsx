@@ -50,6 +50,7 @@ import {
   WouldYouRatherGame,
   MemoryMatchGame,
   WordGuessGame,
+  LetterDuelGame,
   TruthOrDareGame,
   RockPaperScissorsGame,
   TypingRaceGame,
@@ -94,6 +95,12 @@ const GAME_CONFIG: Record<
     icon: Type,
     description: "Guess your partner's word",
     color: "from-blue-400 to-indigo-500",
+  },
+  "letter-duel": {
+    name: "Letter Duel",
+    icon: Type,
+    description: "Pick two letters, then race to make a word",
+    color: "from-sky-400 to-cyan-500",
   },
   "truth-or-dare": {
     name: "Truth or Dare",
@@ -221,6 +228,16 @@ function createInitialGameState(type: GameType, gameContent: GameContent) {
           won: false,
           lost: false,
           setBy: "me" as Role,
+        },
+      };
+    case "letter-duel":
+      return {
+        letterDuel: {
+          selectedLetters: { me: null, her: null },
+          currentTurn: "me" as Role,
+          phase: "selecting" as const,
+          winner: null,
+          winningWord: "",
         },
       };
     case "truth-or-dare":
@@ -922,6 +939,8 @@ function ActiveGame({
         return <MemoryMatchGame {...props} />;
       case "word-guess":
         return <WordGuessGame {...props} />;
+      case "letter-duel":
+        return <LetterDuelGame {...props} />;
       case "truth-or-dare":
         return <TruthOrDareGame {...props} />;
       case "rock-paper-scissors":
