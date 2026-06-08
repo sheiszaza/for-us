@@ -1,6 +1,6 @@
-import { memo, useCallback, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   CalendarHeart,
   ChevronDown,
@@ -14,6 +14,11 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import { useNicknames } from "../context/NicknameContext";
+import { useRole } from "../context/RoleContext";
+import { useRealtimeDoc } from "../hooks/useRealtimeDoc";
+import type { Game, GameType } from "../types";
 // import { FloatingHearts } from "./FloatingHearts";
 import { InstallPrompt } from "./InstallPrompt";
 
@@ -33,9 +38,62 @@ const navItems = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
+const gameInviteNames: Record<GameType, string> = {
+  "tic-tac-toe": "Love Tac Toe",
+  "love-quiz": "Love Quiz",
+  "would-you-rather": "Would You Rather",
+  "memory-match": "Memory Match",
+  "word-guess": "Word Guess",
+  "truth-or-dare": "Truth or Dare",
+  "rock-paper-scissors": "Rock Paper Scissors",
+  "typing-race": "Typing Race",
+  "connect-four": "Connect Four",
+  "dots-and-boxes": "Dots & Boxes",
+  "simon-says": "Simon Says",
+  "reaction-duel": "Reaction Duel",
+  "code-breaker": "Code Breaker",
+};
+
 type BottomNavToggleProps = {
   onToggle: () => void;
 };
+
+type GameInviteToastProps = {
+  gameName: string;
+  inviterName: string;
+  visible: boolean;
+  onJoin: () => void;
+};
+
+const GameInviteToast = memo(function GameInviteToast({
+  gameName,
+  inviterName,
+  visible,
+  onJoin,
+}: GameInviteToastProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -16, scale: 0.96 }}
+      animate={visible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -16, scale: 0.96 }}
+      className="pointer-events-auto mx-3 flex w-[calc(100vw-1.5rem)] max-w-md items-center gap-3 rounded-[1.75rem] border border-rose-100 bg-white/95 p-3 text-left shadow-2xl shadow-rose-200/60 backdrop-blur-xl"
+    >
+      <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-lg shadow-rose-200">
+        <Gamepad2 className="size-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-black text-rose-950">{inviterName} started a game</p>
+        <p className="truncate text-xs font-semibold text-rose-500">{gameName} is ready to play.</p>
+      </div>
+      <button
+        type="button"
+        onClick={onJoin}
+        className="shrink-0 rounded-full bg-theme px-4 py-2 text-xs font-black text-white shadow-lg shadow-theme transition hover:brightness-105 active:scale-95"
+      >
+        Join
+      </button>
+    </motion.div>
+  );
+});
 
 const navVariants = {
   hidden: { y: 120, opacity: 0, scale: 0.96 },
@@ -66,10 +124,72 @@ const HiddenBottomNavToggle = memo(function HiddenBottomNavToggle({
 
 export function AppShell({ children }: AppShellProps) {
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { role } = useRole();
+  const { getNickname } = useNicknames();
+  const { data: currentGame } = useRealtimeDoc<Game>("games", "current");
+  const lastInvitedGameIdRef = useRef<string | null>(null);
+  const activeInviteToastIdRef = useRef<string | null>(null);
 
   const handleToggleBottomNav = useCallback(() => {
     setIsBottomNavVisible((currentValue) => !currentValue);
   }, []);
+
+  useEffect(() => {
+    if (!currentGame) {
+      if (activeInviteToastIdRef.current) {
+        toast.dismiss(activeInviteToastIdRef.current);
+        activeInviteToastIdRef.current = null;
+      }
+      lastInvitedGameIdRef.current = null;
+      return;
+    }
+
+    const isPartnerGame =
+      role &&
+      currentGame.status === "playing" &&
+      currentGame.createdBy !== role;
+
+    if (location.pathname.startsWith("/games")) {
+      if (activeInviteToastIdRef.current) {
+        toast.dismiss(activeInviteToastIdRef.current);
+        activeInviteToastIdRef.current = null;
+      }
+
+      if (isPartnerGame) {
+        lastInvitedGameIdRef.current = currentGame.id;
+      }
+
+      return;
+    }
+
+    const shouldShowInvite =
+      isPartnerGame && currentGame.id !== lastInvitedGameIdRef.current;
+
+    if (!shouldShowInvite) {
+      return;
+    }
+
+    const toastId = `game-invite-${currentGame.id}`;
+    lastInvitedGameIdRef.current = currentGame.id;
+    activeInviteToastIdRef.current = toastId;
+
+    toast.custom(
+      (toastInstance) => (
+        <GameInviteToast
+          gameName={gameInviteNames[currentGame.type]}
+          inviterName={getNickname(currentGame.createdBy)}
+          visible={toastInstance.visible}
+          onJoin={() => {
+            toast.dismiss(toastInstance.id);
+            navigate("/games");
+          }}
+        />
+      ),
+      { id: toastId, duration: 10000 }
+    );
+  }, [currentGame, getNickname, location.pathname, navigate, role]);
 
   return (
     <div>

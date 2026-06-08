@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -7,7 +7,6 @@ import {
   deleteDoc,
   serverTimestamp,
   orderBy,
-  limit,
 } from "firebase/firestore";
 import {
   Gamepad2,
@@ -145,6 +144,8 @@ const GAME_CONFIG: Record<
     color: "from-indigo-400 to-purple-500",
   },
 };
+
+const HISTORY_PAGE_SIZE = 10;
 
 function generateGameId(): string {
   return `game_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
@@ -325,16 +326,14 @@ export function Games() {
   const { gameContent, error: gameContentError } = useGameContent();
   const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [historyPage, setHistoryPage] = useState(0);
 
   const { data: currentGame, loading: gameLoading } = useRealtimeDoc<Game>(
     "games",
     "current"
   );
 
-  const historyConstraints = useMemo(
-    () => [orderBy("playedAt", "desc"), limit(20)],
-    []
-  );
+  const historyConstraints = useMemo(() => [orderBy("playedAt", "desc")], []);
   const { data: gameHistory, loading: historyLoading } =
     useRealtimeCollection<GameHistory>("gameHistory", historyConstraints);
 
@@ -463,6 +462,42 @@ export function Games() {
     };
   }, [gameHistory]);
 
+  const historyPageCount = Math.max(
+    1,
+    Math.ceil(gameHistory.length / HISTORY_PAGE_SIZE)
+  );
+  const visibleGameHistory = useMemo(() => {
+    const start = historyPage * HISTORY_PAGE_SIZE;
+    return gameHistory.slice(start, start + HISTORY_PAGE_SIZE);
+  }, [gameHistory, historyPage]);
+  const historyStartNumber =
+    gameHistory.length === 0 ? 0 : historyPage * HISTORY_PAGE_SIZE + 1;
+  const historyEndNumber = Math.min(
+    gameHistory.length,
+    historyStartNumber + visibleGameHistory.length - 1
+  );
+
+  useEffect(() => {
+    setHistoryPage((currentPage) =>
+      Math.min(currentPage, Math.max(0, historyPageCount - 1))
+    );
+  }, [historyPageCount]);
+
+  const handlePreviousHistoryPage = useCallback(() => {
+    setHistoryPage((currentPage) => Math.max(0, currentPage - 1));
+  }, []);
+
+  const handleNextHistoryPage = useCallback(() => {
+    setHistoryPage((currentPage) =>
+      Math.min(historyPageCount - 1, currentPage + 1)
+    );
+  }, [historyPageCount]);
+
+  const handleOpenHistory = useCallback(() => {
+    setHistoryPage(0);
+    setShowHistory(true);
+  }, []);
+
   if (gameLoading) {
     return (
       <Page eyebrow="Fun together" title="Games">
@@ -506,7 +541,7 @@ export function Games() {
           ) : null}
           <Button
             variant="secondary"
-            onClick={() => setShowHistory(true)}
+            onClick={handleOpenHistory}
             className="gap-2"
           >
             <History className="size-4" />
@@ -721,10 +756,11 @@ export function Games() {
                   </p>
                 </div>
               </div>
-              {gameHistory.map((entry, index) => {
+              {visibleGameHistory.map((entry, index) => {
                 const config = GAME_CONFIG[entry.type];
                 const Icon = config.icon;
-                const isRecent = index === 0;
+                const overallIndex = historyPage * HISTORY_PAGE_SIZE + index;
+                const isRecent = overallIndex === 0;
 
                 return (
                   <motion.div
@@ -794,6 +830,32 @@ export function Games() {
                   </motion.div>
                 );
               })}
+              <div className="sticky bottom-0 -mx-2 bg-white/80 pt-1 backdrop-blur">
+                <div className="flex w-full items-center justify-between gap-1.5 rounded-full bg-rose-50 px-1.5 py-1">
+                  <Button
+                    variant="secondary"
+                    onClick={handlePreviousHistoryPage}
+                    disabled={historyPage === 0}
+                    aria-label="Previous history page"
+                    className="min-w-8 px-2 py-0.5 text-[0.62rem]"
+                  >
+                    Prev
+                  </Button>
+                  <p className="whitespace-nowrap text-center text-[0.62rem] font-bold text-rose-500">
+                    {historyStartNumber}-{historyEndNumber} of{" "}
+                    {gameHistory.length}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    onClick={handleNextHistoryPage}
+                    disabled={historyPage >= historyPageCount - 1}
+                    aria-label="Next history page"
+                    className="min-w-8 px-2 py-0.5 text-[0.62rem]"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -822,6 +884,22 @@ function ActiveGame({
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const config = GAME_CONFIG[game.type];
   const Icon = config.icon;
+  const leaveWinner: Role | undefined =
+    role === "me" ? "her" : role === "her" ? "me" : undefined;
+  const leaveWinnerName = leaveWinner ? getNickname(leaveWinner) : "your partner";
+
+  const handleOpenLeaveConfirm = useCallback(() => {
+    setShowLeaveConfirm(true);
+  }, []);
+
+  const handleCloseLeaveConfirm = useCallback(() => {
+    setShowLeaveConfirm(false);
+  }, []);
+
+  const handleConfirmLeave = useCallback(() => {
+    setShowLeaveConfirm(false);
+    void endGame(leaveWinner);
+  }, [endGame, leaveWinner]);
 
   const renderGame = () => {
     const props = {
@@ -870,7 +948,7 @@ function ActiveGame({
       eyebrow="Now playing"
       title={config.name}
       action={
-        <Button variant="ghost" onClick={() => setShowLeaveConfirm(true)}>
+        <Button variant="ghost" onClick={handleOpenLeaveConfirm}>
           <ArrowLeft className="size-4" />
           Leave
         </Button>
@@ -891,30 +969,28 @@ function ActiveGame({
       <Modal
         open={showLeaveConfirm}
         title="Leave Game?"
-        onClose={() => setShowLeaveConfirm(false)}
+        onClose={handleCloseLeaveConfirm}
       >
         <div className="space-y-4 text-center">
           <div className="text-5xl">🚪</div>
           <p className="text-rose-700">
-            Are you sure you want to leave? The game will end for both of you.
+            Are you sure you want to leave? The game will end for both of you,
+            and {leaveWinnerName} will win this match.
           </p>
           <div className="flex gap-3">
             <Button
               variant="secondary"
-              onClick={() => setShowLeaveConfirm(false)}
+              onClick={handleCloseLeaveConfirm}
               className="flex-1"
             >
               Keep Playing
             </Button>
             <Button
               variant="danger"
-              onClick={() => {
-                setShowLeaveConfirm(false);
-                endGame();
-              }}
+              onClick={handleConfirmLeave}
               className="flex-1"
             >
-              Leave Game
+              Leave & Lose
             </Button>
           </div>
         </div>
