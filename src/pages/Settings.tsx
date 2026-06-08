@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Check, Heart, LogOut, Palette, Shield, User } from 'lucide-react';
+import { useCallback, useEffect, useState, type FormEvent, type MouseEvent } from 'react';
+import { Check, Heart, LogOut, Palette, Shield, Type as TypeIcon, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNicknames } from '../context/NicknameContext';
 import { usePins } from '../context/PinContext';
 import { useRole } from '../context/RoleContext';
-import { themes, useTheme, type ThemeName } from '../context/ThemeContext';
+import { displayScales, themes, useTheme, type DisplayScaleName, type ThemeName } from '../context/ThemeContext';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Field } from '../components/Field';
@@ -19,7 +19,7 @@ const themeColors: Record<ThemeName, string> = {
 
 export function Settings() {
   const { role, logout } = useRole();
-  const { theme, setTheme } = useTheme();
+  const { displayScale, setDisplayScale, theme, setTheme } = useTheme();
   const { getNickname, setNickname } = useNicknames();
   const { setPin } = usePins();
   const [newPin, setNewPin] = useState('');
@@ -82,6 +82,26 @@ export function Settings() {
     toast.success('Locked the app.');
   }, [logout]);
 
+  const handleThemeSelect = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      const selectedTheme = event.currentTarget.value as ThemeName;
+
+      setTheme(selectedTheme);
+      toast.success(`Switched to ${themes[selectedTheme].label} theme.`);
+    },
+    [setTheme],
+  );
+
+  const handleDisplayScaleSelect = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      const selectedDisplayScale = event.currentTarget.value as DisplayScaleName;
+
+      setDisplayScale(selectedDisplayScale);
+      toast.success(`Display size set to ${displayScales[selectedDisplayScale].label}.`);
+    },
+    [setDisplayScale],
+  );
+
   return (
     <Page eyebrow="Private controls" title="Settings" description="Personalize your theme, update your PIN, and make the app feel yours.">
       <Card>
@@ -143,19 +163,56 @@ export function Settings() {
         <div className="grid grid-cols-2 gap-3">
           {(Object.keys(themes) as ThemeName[]).map((themeName) => (
             <button
+              type="button"
               key={themeName}
-              onClick={() => {
-                setTheme(themeName);
-                toast.success(`Switched to ${themes[themeName].label} theme.`);
-              }}
+              value={themeName}
+              onClick={handleThemeSelect}
+              aria-pressed={theme === themeName}
               className={`flex items-center gap-3 rounded-2xl border-2 p-3 transition ${
-                theme === themeName ? 'border-rose-400 bg-white/80' : 'border-transparent bg-white/50'
+                theme === themeName ? 'border-theme bg-white/80' : 'border-transparent bg-white/50'
               }`}
             >
               <div className={`grid size-10 place-items-center rounded-xl ${themeColors[themeName]} text-white`}>
                 {theme === themeName ? <Check className="size-5" /> : null}
               </div>
               <span className="text-sm font-bold text-rose-950">{themes[themeName].label}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="mb-4 flex items-start gap-3">
+          <TypeIcon className="mt-1 size-5 text-rose-500" />
+          <div>
+            <h2 className="text-xl font-black text-rose-950">Display Size</h2>
+            <p className="mt-1 text-sm leading-6 text-rose-700/75">Adjust the app zoom, including text, spacing, and controls on this device.</p>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(Object.keys(displayScales) as DisplayScaleName[]).map((displayScaleName) => (
+            <button
+              type="button"
+              key={displayScaleName}
+              value={displayScaleName}
+              onClick={handleDisplayScaleSelect}
+              aria-pressed={displayScale === displayScaleName}
+              className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition ${
+                displayScale === displayScaleName ? 'border-theme bg-white/80' : 'border-transparent bg-white/50'
+              }`}
+            >
+              <div
+                className={`grid size-10 shrink-0 place-items-center rounded-xl ${
+                  displayScale === displayScaleName ? 'bg-theme text-white' : 'bg-rose-100 text-rose-500'
+                }`}
+              >
+                <span className="font-black">Aa</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-sm font-black text-rose-950">{displayScales[displayScaleName].label}</span>
+                <span className="mt-1 block text-xs leading-5 text-rose-700/75">{displayScales[displayScaleName].description}</span>
+              </div>
+              {displayScale === displayScaleName ? <Check className="size-5 shrink-0 text-theme" /> : null}
             </button>
           ))}
         </div>
