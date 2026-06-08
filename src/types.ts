@@ -221,6 +221,7 @@ export type StopCategoriesCategory =
 export type StopCategoriesAnswers = Record<StopCategoriesCategory, string>;
 
 export type StopCategoriesPhase =
+  | 'waiting-for-players'
   | 'selecting-letter'
   | 'typing'
   | 'revealing'
@@ -239,6 +240,7 @@ export type StopCategoriesState = {
   currentTurn: Role;
   letter: string | null;
   letterSelectionStartedAt: number;
+  joined: Record<Role, boolean>;
   answers: Record<Role, StopCategoriesAnswers>;
   stoppedBy: Role | null;
   scores: Record<Role, number>;

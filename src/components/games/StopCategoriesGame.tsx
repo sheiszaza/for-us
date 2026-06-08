@@ -126,6 +126,38 @@ function StopCategoriesGameComponent({
     setLocalAnswers(state.answers[role] ?? createEmptyAnswers());
   }, [role, state?.round]);
 
+  useEffect(() => {
+    if (!state || !role || state.phase !== "waiting-for-players") return;
+
+    const joined = state.joined ?? {
+      me: game.createdBy === "me",
+      her: game.createdBy === "her",
+    };
+
+    if (joined[role]) return;
+
+    const nextJoined = {
+      ...joined,
+      [role]: true,
+    };
+
+    if (nextJoined.me && nextJoined.her) {
+      void updateGameState({
+        stopCategories: {
+          ...state,
+          joined: nextJoined,
+          phase: "selecting-letter",
+          letterSelectionStartedAt: Date.now(),
+        },
+      });
+      return;
+    }
+
+    void updateGameFields({
+      [`state.stopCategories.joined.${role}`]: true,
+    });
+  }, [game.createdBy, role, state, updateGameFields, updateGameState]);
+
   const letterTimeRemaining = state
     ? Math.max(
         0,
@@ -235,6 +267,11 @@ function StopCategoriesGameComponent({
       : state.scores.her > state.scores.me
       ? "her"
       : "draw";
+  const joinedPlayers = state.joined ?? {
+    me: game.createdBy === "me",
+    her: game.createdBy === "her",
+  };
+  const bothPlayersJoined = joinedPlayers.me && joinedPlayers.her;
 
   const handleSelectLetter = async (letter: string) => {
     if (
@@ -387,6 +424,53 @@ function StopCategoriesGameComponent({
         </div>
         {renderScoreCard("her", "bg-fuchsia-100 text-fuchsia-600")}
       </div>
+
+      {state.phase === "waiting-for-players" ? (
+        <motion.div
+          key={`${game.id}-waiting`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full space-y-4 rounded-3xl bg-gradient-to-br from-sky-50 to-cyan-50 p-5 text-center"
+        >
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wider text-sky-500">
+              Waiting Room
+            </p>
+            <p className="mt-1 text-xl font-black text-rose-950">
+              {bothPlayersJoined
+                ? "Starting the letter picker..."
+                : "Waiting for both players to join"}
+            </p>
+            <p className="mt-2 text-sm font-semibold text-sky-600">
+              The countdown starts after both of you open this game.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {(["me", "her"] as Role[]).map((playerRole) => {
+              const joined = joinedPlayers[playerRole];
+
+              return (
+                <div
+                  key={playerRole}
+                  className={`rounded-2xl p-3 ${
+                    joined
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-white/80 text-sky-500"
+                  }`}
+                >
+                  <p className="text-xs font-bold uppercase tracking-wider">
+                    {getNickname(playerRole)}
+                  </p>
+                  <p className="mt-1 text-lg font-black">
+                    {joined ? "Joined" : "Waiting"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      ) : null}
 
       {state.phase === "selecting-letter" ? (
         <motion.div

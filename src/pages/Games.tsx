@@ -360,6 +360,10 @@ function createInitialGameState(
           currentTurn: startingRole,
           letter: null,
           letterSelectionStartedAt: Date.now(),
+          joined: {
+            me: startingRole === "me",
+            her: startingRole === "her",
+          },
           answers: {
             me: { person: "", animal: "", thing: "", food: "", country: "" },
             her: { person: "", animal: "", thing: "", food: "", country: "" },
@@ -370,7 +374,7 @@ function createInitialGameState(
           rounds: [],
           round: 1,
           maxRounds: 5,
-          phase: "selecting-letter" as const,
+          phase: "waiting-for-players" as const,
           revealedCategoryIndex: 0,
         },
       };
