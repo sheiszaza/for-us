@@ -110,6 +110,7 @@ export type GameType =
   | 'connect-four'
   | 'dots-and-boxes'
   | 'dama'
+  | 'uno'
   | 'simon-says'
   | 'reaction-duel'
   | 'code-breaker';
@@ -320,6 +321,45 @@ export type DamaState = {
   forcedFrom: number | null;
 };
 
+export type UnoCardColor = 'red' | 'yellow' | 'green' | 'blue' | 'wild';
+export type UnoPlayableColor = Exclude<UnoCardColor, 'wild'>;
+
+export type UnoCardKind =
+  | 'number'
+  | 'skip'
+  | 'reverse'
+  | 'draw-two'
+  | 'wild'
+  | 'wild-draw-four';
+
+export type UnoCard = {
+  id: string;
+  color: UnoCardColor;
+  kind: UnoCardKind;
+  value?: number;
+};
+
+export type UnoMove = {
+  by: Role;
+  action: 'play' | 'draw' | 'pass';
+  card: UnoCard | null;
+  chosenColor: UnoPlayableColor | null;
+  message: string;
+  at: number;
+};
+
+export type UnoState = {
+  hands: Record<Role, UnoCard[]>;
+  drawPile: UnoCard[];
+  discardPile: UnoCard[];
+  currentTurn: Role;
+  activeColor: UnoPlayableColor;
+  pendingDrawCount: number;
+  winner: Role | null;
+  drewThisTurn: Record<Role, boolean>;
+  lastMove: UnoMove | null;
+};
+
 export type SimonSaysState = {
   sequence: number[];
   inputs: { me: number[]; her: number[] };
@@ -374,6 +414,7 @@ export type GameState = {
   connectFour?: ConnectFourState;
   dotsAndBoxes?: DotsAndBoxesState;
   dama?: DamaState;
+  uno?: UnoState;
   simonSays?: SimonSaysState;
   reactionDuel?: ReactionDuelState;
   codeBreaker?: CodeBreakerState;

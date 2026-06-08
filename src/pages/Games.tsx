@@ -41,6 +41,8 @@ import type {
   Role,
   DamaCell,
   TicTacToeCell,
+  UnoCard,
+  UnoPlayableColor,
 } from "../types";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -61,6 +63,7 @@ import {
   ConnectFourGame,
   DotsAndBoxesGame,
   DamaGame,
+  UnoGame,
   SimonSaysGame,
   ReactionDuelGame,
   CodeBreakerGame,
@@ -155,6 +158,12 @@ const GAME_CONFIG: Record<
     description: "Turkish checkers with sideways moves and bold captures",
     color: "from-stone-500 to-amber-500",
   },
+  uno: {
+    name: "UNO Duel",
+    icon: Layers,
+    description: "UNO",
+    color: "from-red-400 via-yellow-400 to-blue-500",
+  },
   "simon-says": {
     name: "Simon Says",
     icon: Sparkles,
@@ -202,6 +211,72 @@ function createInitialDamaBoard(): DamaCell[] {
 
     return null;
   });
+}
+
+const UNO_PLAYABLE_COLORS: UnoPlayableColor[] = [
+  "red",
+  "yellow",
+  "green",
+  "blue",
+];
+
+function createUnoDeck(): UnoCard[] {
+  const deck: UnoCard[] = [];
+
+  UNO_PLAYABLE_COLORS.forEach((color) => {
+    deck.push({ id: `${color}-0`, color, kind: "number", value: 0 });
+
+    for (let value = 1; value <= 9; value += 1) {
+      deck.push({ id: `${color}-${value}-a`, color, kind: "number", value });
+      deck.push({ id: `${color}-${value}-b`, color, kind: "number", value });
+    }
+
+    ["skip", "reverse", "draw-two"].forEach((kind) => {
+      deck.push({
+        id: `${color}-${kind}-a`,
+        color,
+        kind: kind as UnoCard["kind"],
+      });
+      deck.push({
+        id: `${color}-${kind}-b`,
+        color,
+        kind: kind as UnoCard["kind"],
+      });
+    });
+  });
+
+  for (let index = 0; index < 4; index += 1) {
+    deck.push({ id: `wild-${index}`, color: "wild", kind: "wild" });
+    deck.push({
+      id: `wild-draw-four-${index}`,
+      color: "wild",
+      kind: "wild-draw-four",
+    });
+  }
+
+  return deck;
+}
+
+function createInitialUnoState(startingRole: Role) {
+  const deck = shuffleArray(createUnoDeck());
+  const hands = {
+    me: deck.splice(0, 7),
+    her: deck.splice(0, 7),
+  };
+  const firstDiscardIndex = deck.findIndex((card) => card.color !== "wild");
+  const [firstDiscard] = deck.splice(Math.max(firstDiscardIndex, 0), 1);
+
+  return {
+    hands,
+    drawPile: deck,
+    discardPile: [firstDiscard],
+    currentTurn: startingRole,
+    activeColor: firstDiscard.color as UnoPlayableColor,
+    pendingDrawCount: 0,
+    winner: null,
+    drewThisTurn: { me: false, her: false },
+    lastMove: null,
+  };
 }
 
 function createInitialGameState(
@@ -372,6 +447,10 @@ function createInitialGameState(
           lastMove: [],
           forcedFrom: null,
         },
+      };
+    case "uno":
+      return {
+        uno: createInitialUnoState(startingRole),
       };
     case "simon-says":
       return {
@@ -1005,7 +1084,9 @@ function ActiveGame({
   const Icon = config.icon;
   const leaveWinner: Role | undefined =
     role === "me" ? "her" : role === "her" ? "me" : undefined;
-  const leaveWinnerName = leaveWinner ? getNickname(leaveWinner) : "your partner";
+  const leaveWinnerName = leaveWinner
+    ? getNickname(leaveWinner)
+    : "your partner";
 
   const handleOpenLeaveConfirm = useCallback(() => {
     setShowLeaveConfirm(true);
@@ -1060,6 +1141,8 @@ function ActiveGame({
         return <DotsAndBoxesGame {...props} />;
       case "dama":
         return <DamaGame {...props} />;
+      case "uno":
+        return <UnoGame {...props} />;
       case "simon-says":
         return <SimonSaysGame {...props} />;
       case "reaction-duel":

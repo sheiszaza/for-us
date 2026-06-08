@@ -12,6 +12,7 @@ export { TypingRaceGame } from "./TypingRaceGame";
 export { ConnectFourGame } from "./ConnectFourGame";
 export { DotsAndBoxesGame } from "./DotsAndBoxesGame";
 export { DamaGame } from "./DamaGame";
+export { UnoGame } from "./UnoGame";
 export { SimonSaysGame } from "./SimonSaysGame";
 export { ReactionDuelGame } from "./ReactionDuelGame";
 export { CodeBreakerGame } from "./CodeBreakerGame";
