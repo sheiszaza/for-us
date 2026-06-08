@@ -9,6 +9,8 @@ import {
   orderBy,
   query,
   type DocumentData,
+  type Query,
+  type QuerySnapshot,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebaseData";
@@ -134,6 +136,79 @@ export function usePaginatedMessages() {
     }
   }, [state.loadingMore, state.hasMore]);
 
+  const loadUntilMessage = useCallback(
+    async (messageId: string) => {
+      if (state.loadingMore || !state.hasMore || !oldestDocRef.current) {
+        return false;
+      }
+
+      setState((current) => ({ ...current, loadingMore: true }));
+
+      try {
+        const messagesRef = collection(db, "messages");
+        let oldestDoc: QueryDocumentSnapshot<DocumentData> | null =
+          oldestDocRef.current;
+        let hasMoreOlderMessages: boolean = state.hasMore;
+        let found = false;
+        let loadedMessages: Message[] = [];
+
+        while (oldestDoc && hasMoreOlderMessages && !found) {
+          const olderMessagesQuery: Query<DocumentData> = query(
+            messagesRef,
+            orderBy("createdAt", "asc"),
+            endBefore(oldestDoc),
+            limitToLast(PAGE_SIZE)
+          );
+
+          const snapshot: QuerySnapshot<DocumentData> =
+            await getDocs(olderMessagesQuery);
+          const olderMessages = snapshot.docs.map((snapshotDoc) => ({
+            id: snapshotDoc.id,
+            ...snapshotDoc.data(),
+          })) as Message[];
+
+          if (snapshot.docs.length > 0) {
+            oldestDoc = snapshot.docs[0];
+            oldestDocRef.current = oldestDoc;
+          }
+
+          loadedMessages = [...olderMessages, ...loadedMessages];
+          found = olderMessages.some((message) => message.id === messageId);
+          hasMoreOlderMessages = snapshot.docs.length >= PAGE_SIZE;
+
+          if (snapshot.docs.length === 0) {
+            oldestDoc = null;
+          }
+        }
+
+        setState((current) => {
+          const existingIds = new Set(current.messages.map((message) => message.id));
+          const uniqueLoadedMessages = loadedMessages.filter(
+            (message) => !existingIds.has(message.id)
+          );
+
+          return {
+            ...current,
+            messages: [...uniqueLoadedMessages, ...current.messages],
+            loadingMore: false,
+            hasMore: hasMoreOlderMessages,
+          };
+        });
+
+        return found;
+      } catch (error) {
+        setState((current) => ({
+          ...current,
+          loadingMore: false,
+          error: error instanceof Error ? error.message : "Failed to load more",
+        }));
+
+        return false;
+      }
+    },
+    [state.loadingMore, state.hasMore]
+  );
+
   return {
     messages: state.messages,
     loading: state.loading,
@@ -141,5 +216,6 @@ export function usePaginatedMessages() {
     error: state.error,
     hasMore: state.hasMore,
     loadMore,
+    loadUntilMessage,
   };
 }

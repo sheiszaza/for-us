@@ -76,16 +76,65 @@ service cloud.firestore {
         && validRole(data.updatedBy);
     }
 
-    function validMessageCreate(data) {
+    function validReactions(reactions) {
+      return reactions is map
+        && reactions.keys().hasOnly(['me', 'her'])
+        && (!('me' in reactions) || (reactions.me is string && reactions.me.size() <= 16))
+        && (!('her' in reactions) || (reactions.her is string && reactions.her.size() <= 16));
+    }
+
+    function validMessageReply(replyTo) {
+      return replyTo is map
+        && replyTo.keys().hasAll(['id', 'text', 'from'])
+        && replyTo.keys().hasOnly(['id', 'text', 'from', 'imageUrl'])
+        && replyTo.id is string
+        && replyTo.id.size() > 0
+        && replyTo.id.size() <= 128
+        && replyTo.text is string
+        && replyTo.text.size() <= 280
+        && validRole(replyTo.from)
+        && (!('imageUrl' in replyTo) || replyTo.imageUrl == null || replyTo.imageUrl is string);
+    }
+
+    function validMessageShape(data) {
       return data.keys().hasAll(['text', 'from', 'createdAt', 'seenByMe', 'seenByHer'])
-        && data.keys().hasOnly(['text', 'from', 'createdAt', 'seenByMe', 'seenByHer', 'imageUrl', 'imagePath'])
+        && data.keys().hasOnly([
+          'text',
+          'from',
+          'createdAt',
+          'seenByMe',
+          'seenByHer',
+          'imageUrl',
+          'imagePath',
+          'replyTo',
+          'reactions',
+          'editedAt',
+          'editedBy',
+          'deletedAt',
+          'deletedBy'
+        ])
         && validRole(data.from)
         && data.text is string
         && data.createdAt is timestamp
         && data.seenByMe is bool
         && data.seenByHer is bool
         && (!('imageUrl' in data) || data.imageUrl == null || data.imageUrl is string)
-        && (!('imagePath' in data) || data.imagePath == null || data.imagePath is string);
+        && (!('imagePath' in data) || data.imagePath == null || data.imagePath is string)
+        && (!('replyTo' in data) || validMessageReply(data.replyTo))
+        && (!('reactions' in data) || validReactions(data.reactions))
+        && (!('editedAt' in data) || data.editedAt == null || data.editedAt is timestamp)
+        && (!('editedBy' in data) || validRole(data.editedBy))
+        && (!('deletedAt' in data) || data.deletedAt == null || data.deletedAt is timestamp)
+        && (!('deletedBy' in data) || validRole(data.deletedBy));
+    }
+
+    function validMessageCreate(data) {
+      return validMessageShape(data)
+        && !('editedAt' in data)
+        && !('editedBy' in data)
+        && !('deletedAt' in data)
+        && !('deletedBy' in data)
+        && !('reactions' in data);
     }
 
     function validTypingStatus(data, typingRole) {
@@ -97,15 +146,51 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function validPresenceStatus(data, presenceRole) {
+      return validRole(presenceRole)
+        && data.keys().hasAll(['role', 'isOnline', 'updatedAt'])
+        && data.keys().hasOnly(['role', 'isOnline', 'updatedAt'])
+        && data.role == presenceRole
+        && data.isOnline is bool
+        && data.updatedAt is timestamp;
+    }
+
     match /messages/{messageId} {
       // Only anonymous Firebase users can read/write the private couple chat.
       allow read: if signedIn();
       allow create: if signedIn()
         && validMessageCreate(request.resource.data);
       allow update: if signedIn()
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenByMe', 'seenByHer'])
-        && request.resource.data.seenByMe is bool
-        && request.resource.data.seenByHer is bool;
+        && validMessageShape(request.resource.data)
+        && request.resource.data.from == resource.data.from
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (
+          (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenByMe', 'seenByHer'])
+            && request.resource.data.seenByMe is bool
+            && request.resource.data.seenByHer is bool
+          )
+          || (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['text', 'editedAt', 'editedBy'])
+            && !('deletedAt' in resource.data)
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.editedAt is timestamp
+            && request.resource.data.editedBy == resource.data.from
+          )
+          || (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['text', 'deletedAt', 'deletedBy'])
+            && !('deletedAt' in resource.data)
+            && request.resource.data.text == ''
+            && request.resource.data.deletedAt is timestamp
+            && request.resource.data.deletedBy == resource.data.from
+          )
+          || (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['reactions'])
+            && (!('deletedAt' in resource.data))
+            && validReactions(request.resource.data.reactions)
+          )
+        );
       allow delete: if false;
     }
 
@@ -113,6 +198,13 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if signedIn()
         && validTypingStatus(request.resource.data, typingRole);
+      allow delete: if false;
+    }
+
+    match /presenceStatus/{presenceRole} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && validPresenceStatus(request.resource.data, presenceRole);
       allow delete: if false;
     }
 

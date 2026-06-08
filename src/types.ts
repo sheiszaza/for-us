@@ -4,6 +4,13 @@ export type Role = 'me' | 'her';
 
 export type FirestoreDate = Timestamp | Date;
 
+export type MessageReply = {
+  id: string;
+  text: string;
+  from: Role;
+  imageUrl?: string | null;
+};
+
 export type Message = {
   id: string;
   text: string;
@@ -13,11 +20,23 @@ export type Message = {
   seenByHer: boolean;
   imageUrl?: string;
   imagePath?: string;
+  replyTo?: MessageReply;
+  reactions?: Partial<Record<Role, string>>;
+  editedAt?: FirestoreDate | null;
+  editedBy?: Role;
+  deletedAt?: FirestoreDate | null;
+  deletedBy?: Role;
 };
 
 export type TypingStatus = {
   role: Role;
   isTyping: boolean;
+  updatedAt?: FirestoreDate | null;
+};
+
+export type PresenceStatus = {
+  role: Role;
+  isOnline: boolean;
   updatedAt?: FirestoreDate | null;
 };
 
